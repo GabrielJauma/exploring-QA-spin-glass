@@ -1084,7 +1084,7 @@ T_max_vs_adj = data['T_max_vs_adj']
 error_T_max_vs_adj = data['error_T_max_vs_adj']
 
 #%% Incise: calculate std ofsets
-import Modules.spin_glass as sg
+import Modules.graph_generator as sg
 
 mu_offset_vs_adj = []
 std_offset_vs_adj = []
