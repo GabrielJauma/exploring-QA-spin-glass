@@ -1,9 +1,0 @@
-To run:
-
-- Make the conda enviorement, change name from py38 to the name you havce chossen on .sh script.
-
-- Executre with:
-
-sbatch --job-name=L64000 --export=ALL,L=64000,wmin=1.0,wmax=20.0,nsteps=39,nsamp=50000 med_jobfile.sh
-
-Export all is important so to export conda enviorement. Execute the order as it is, do not let space between comma.
