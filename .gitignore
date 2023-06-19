@@ -2,4 +2,5 @@
 /venv/
 /Figures/
 /.idea/
+/.conda/
 /Cluster/Adjacency_matrices/
