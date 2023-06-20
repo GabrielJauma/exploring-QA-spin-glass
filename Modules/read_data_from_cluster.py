@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from joblib import Parallel, delayed, cpu_count
 from scipy.optimize import curve_fit
 import glob
@@ -258,9 +257,8 @@ def read_data(adjacency, distribution, sizes, add, T0, Tf, MCS_avg_0, max_MCS_vs
     MCS_avg_vs_size = [MCS_avg_0 * 2 ** (np.arange(n_MCS)) for n_MCS in n_MCS_vs_size]
 
     labels_vs_size, T_vs_size, q2_vs_size, q4_vs_size, ql_vs_size, U_vs_size, U2_vs_size, σ2_q2_bin_vs_size, \
-    σ2_q4_bin_vs_size, q_dist_vs_size, g_vs_size, g_bootstrap_vs_size, error_vs_size,\
-    dg_dT_vs_size, dg_dT_bootstrap_vs_size, error_dg_dT_vs_size, N_configs_vs_size, copies_vs_size = \
-        [[[[] for _ in range(n_MCS_vs_size[i])] for i in range(len(sizes))] for _ in range(18)]
+    σ2_q4_bin_vs_size, q_dist_vs_size, N_configs_vs_size, copies_vs_size = \
+        [[[[] for _ in range(n_MCS_vs_size[i])] for i in range(len(sizes))] for _ in range(12)]
 
 
     if data_type == 'old' or data_type == 'all':
@@ -347,76 +345,8 @@ def read_data(adjacency, distribution, sizes, add, T0, Tf, MCS_avg_0, max_MCS_vs
                 copies_vs_size[size_index][MCS_index] = 0
 
     return MCS_avg_vs_size, N_configs_vs_size, copies_vs_size, labels_vs_size, T_vs_size, q2_vs_size, q4_vs_size, \
-           ql_vs_size, U_vs_size, U2_vs_size, σ2_q2_bin_vs_size, σ2_q4_bin_vs_size, q_dist_vs_size, g_vs_size, \
-        g_bootstrap_vs_size, error_vs_size, dg_dT_vs_size, dg_dT_bootstrap_vs_size, error_dg_dT_vs_size
+           ql_vs_size, U_vs_size, U2_vs_size, σ2_q2_bin_vs_size, σ2_q4_bin_vs_size, q_dist_vs_size
 
-
-
-# %% Calculate binder cumulant, error and bootstrap
-def binder_cumulant_and_error_bootstrap(T, µ_q2_t, µ_q4_t, n_bootstrap=1000, error_type='1'):
-    try:
-        N = min(µ_q4_t.shape[0], µ_q2_t.shape[0])
-        copies = µ_q2_t.shape[1]
-    except:
-        return [], [], [], [], [], []
-    g_bootstrap = np.zeros([n_bootstrap, copies])
-    dg_dT_bootstrap = np.zeros([n_bootstrap, copies])
-    # g_bootstrap_extrapolated = np.zeros([n_bootstrap, copies])
-
-    g = 0.5 * (3 - np.mean(µ_q4_t, 0) / (np.mean(µ_q2_t, 0) ** 2))
-    dg_dT = np.gradient(g, T)
-    # g = 0.5 * (3 - np.mean(µ_q4_t / (µ_q2_t ** 2), 0))
-
-    for i in range(n_bootstrap):
-        bootstrap_indices = np.random.randint(N, size=N)
-        µ_q2_t_bootstrap = µ_q2_t[bootstrap_indices, :]
-        µ_q4_t_bootstrap = µ_q4_t[bootstrap_indices, :]
-
-        g_bootstrap[i, :] = 0.5 * (3 - np.mean(µ_q4_t_bootstrap, 0) / (np.mean(µ_q2_t_bootstrap, 0) ** 2))
-        # g_bootstrap[i, :] = 0.5 * (3 - np.mean(µ_q4_t_bootstrap / (µ_q2_t_bootstrap ** 2), 0))
-        dg_dT_bootstrap[i, :] = np.gradient(g_bootstrap[i, :], T)
-
-    if error_type == '1' or error_type == 'all':
-        e1 = np.std(g_bootstrap, 0)
-        g_error = e1
-        dg_dT_error = np.std(dg_dT_bootstrap, 0)
-
-    if error_type == '2' or error_type == 'all':
-        µ_q2_c = np.mean(µ_q2_t, 0)  # Configuration average of the thermal averages of q2
-        µ_q4_c = np.mean(µ_q4_t, 0)  # Configuration average of the thermal averages of q4
-        σ2_q2_c = np.var(µ_q2_t, 0)  # Configuration variance of the thermal averages of q2
-        σ2_q4_c = np.var(µ_q4_t, 0)  # Configuration variance of the thermal averages of q4
-
-        dBdq2 = 0.5 * 2 * µ_q4_c / µ_q2_c ** 3
-        dBdq4 = -0.5 * 1 / µ_q2_c ** 2
-
-        e2 = np.sqrt(σ2_q2_c * dBdq2 ** 2 + σ2_q4_c * dBdq4 ** 2) / np.sqrt(N)
-        g_error = e2
-
-    if error_type == '3' or error_type == 'all':
-        µ_q2_c = np.mean(µ_q2_t, 0)  # Configuration average of the thermal averages of q2
-        µ_q4_c = np.mean(µ_q4_t, 0)  # Configuration average of the thermal averages of q4
-        d_q2 = np.std(µ_q2_t, 0)
-        d_q4 = np.std(µ_q4_t, 0)
-        e3 = np.sqrt((2 * d_q2 / µ_q2_c) ** 2 + (d_q4 / µ_q4_c) ** 2) / np.sqrt(N)
-        g_error = e3
-
-    if error_type == '4' or error_type == 'all':
-        e4 = np.zeros(copies)
-        for k in range(copies):
-            a = µ_q2_t[:, k] ** 2
-            b = 0.5 * µ_q4_t[:, k]
-            µ_a = np.mean(a)
-            µ_b = np.mean(b)
-            σ_ab = np.cov(a, b, bias=True)
-            e4[k] = np.sqrt(
-                σ_ab[0, 0] * (1 / µ_a) ** 2 + σ_ab[1, 1] * (1 / µ_b) ** 2 - 2 * σ_ab[0, 1] / (µ_a * µ_b)) / np.sqrt(N)
-        g_error = e4
-
-    if error_type == 'all':
-        g_error = [e1, e2, e3, e4]
-
-    return g, g_bootstrap, g_error, dg_dT, dg_dT_bootstrap, dg_dT_error
 
 # %% Extrapolate B at MCS -> inf to estimate error from non thermalization
 def f_conv_vs_MCS(x, a, b, c):
