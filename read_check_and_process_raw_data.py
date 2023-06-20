@@ -169,12 +169,18 @@ for size_index, (T, dg_dT, error_dg_dT) in enumerate(zip(T_vs_size_best, dg_dT_v
                 markersize=2, capsize=2, capthick=1, elinewidth=1, linewidth=0.5)
 fig.show()
 
+# %% Plot error of numerical derivative of Binder cumulant
+fig, ax = plt.subplots()
+for size_index, (T, error_dg_dT) in enumerate(zip(T_vs_size_best, error_dg_dT_vs_size_best)):
+    ax.plot(T, error_dg_dT, label=f'{sizes[size_index]}', color=color_vs_size[size_index], linewidth=0.5)
+fig.show()
+
 # %% PROCESS DATA FOR FIGURES 2 and 5
 
 # %%  Calculate pade fits of the derivative of the Binder cumulant
 dg_dT_pade, T_c, peak_height = pf.pade_fss(sizes_vs_adj[adj_index], T_vs_size_best, dg_dT_vs_size_best,
                                                   error_dg_dT_vs_size_best, T_term_vs_size=False, ntr=10,
-                                                  ic=ic_jc_vs_adj[adj_index][0],jc=ic_jc_vs_adj[adj_index][1],
+                                                  ic=ic_jc_vs_adj[adj_index][0], jc=ic_jc_vs_adj[adj_index][1],
                                                   method_ic_jc='specific')
 
 # %% Store processed data
@@ -209,10 +215,19 @@ peak_width_err = 2 * np.nanstd(peak_width_bootstrap, 0)
 
 # %% Histogram of bootstrap variables to check that it is gaussian like
 fig, ax = plt.subplots()
-ax.hist(T_max_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
-ax.bar(Tc_max, [100]*len(sizes), 0.0005, color='k')
+ax.hist(Tc_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
+ax.bar(Tc, [100]*len(sizes), 0.0005, color='k')
 fig.show()
 
+fig, ax = plt.subplots()
+ax.hist(Tc_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
+ax.bar(Tc, [100]*len(sizes), 0.0005, color='k')
+fig.show()
+
+fig, ax = plt.subplots()
+ax.hist(Tc_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
+ax.bar(Tc, [100]*len(sizes), 0.0005, color='k')
+fig.show()
 # %% Tc histogram
 
 fig, ax = plt.subplots()
