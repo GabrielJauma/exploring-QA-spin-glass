@@ -451,7 +451,6 @@ def pade_fss(sizes,  T_vs_size_best, dg_dT_vs_size_best, error_dg_dT_vs_size_bes
 
     T0 = Tfit[0][0]
     Tf = Tfit[0][-1]
-    nf = len(sizes)
 
     if method_ic_jc == 'best':
         dg_dT_pade, _, l_rchi, inopt = pade_best(Tfit, Ofit, np.array(Ofit_er), ntr, ic, jc, add_0=add_0)
@@ -461,158 +460,11 @@ def pade_fss(sizes,  T_vs_size_best, dg_dT_vs_size_best, error_dg_dT_vs_size_bes
     # Data to extrapolate the maxima
     T_c = estimate_Tc_with_pade(sizes, T0, Tf, dg_dT_pade, return_T_max=True)
 
-    peak_height = np.array([dg_dT_pade[i](T_c[i]) for i in range(nf)])
+    peak_height = np.array([dg_dT_pade[i](T_c[i]) for i in range(len(sizes))])
 
     print(f'Tc = {np.polyfit(1 / sizes[-3:] ** (1 / 3), T_c[-3:], 1, cov=True)[0][-1]}')
 
     return dg_dT_pade, T_c, peak_height
-
-
-def pade_fss_analysis_figures(sizes, T_vs_size, dg_dT_vs_size, error_vs_size, T_term_vs_size=False, ntr=10, ic=[5], jc=[6],
-                      figsize_in=(16 / 4, 9 / 4), dpi_in=100, adjacency='random_regular_3', out='figures', add_0=False, method_ic_jc='best'):
-    Lfit = sizes
-    sizes = np.array(sizes)
-
-    if T_term_vs_size:
-        T_term_ind = [np.where(T[-1] > T_term)[0][0] for T_term, T in zip(T_term_vs_size, T_vs_size)]
-    else:
-        T_term_ind = [0] * len(sizes)
-
-    try:
-        Tfit = [T[-1][k:] for T, k in zip(T_vs_size, T_term_ind)]
-    except:
-        Tfit = [T[k:] for T, k in zip(T_vs_size, T_term_ind)]
-
-    try:
-        Ofit = [B[-1][k:] for B, k in zip(dg_dT_vs_size, T_term_ind)]
-    except:
-        Ofit = [B[k:] for B, k in zip(dg_dT_vs_size, T_term_ind)]
-    try:
-        Ofit_er = [err[-1][k:] for err, k in zip(error_vs_size, T_term_ind)]
-    except:
-        Ofit_er = [err[k:] for err, k in zip(error_vs_size, T_term_ind)]
-
-    T0 = Tfit[0][0]
-    Tf = Tfit[0][-1]
-    nf = len(sizes)
-
-    if method_ic_jc == 'best':
-        dg_dT_pade, _, l_rchi, inopt = pade_best(Tfit, Ofit, np.array(Ofit_er), ntr, ic, jc, add_0=add_0)
-    elif method_ic_jc == 'specific':
-        dg_dT_pade, _, l_rchi, inopt = pade_best_specific_ic_jc(Tfit, Ofit, np.array(Ofit_er), ntr, ic, jc, add_0=add_0)
-
-    if out == 'figures':
-        T_pade = np.linspace(T0, Tf, 1000)
-
-        fig, ax2 = plt.subplots(figsize=np.array(figsize_in) * 1.5 * [1 / 2, 1], dpi=dpi_in)
-        for i in range(0, nf):
-            ax2.plot(T_pade, -dg_dT_pade[i](T_pade), label=" size" + str(Lfit[i]), color=color[i])
-            ax2.errorbar(Tfit[i], -Ofit[i], yerr=Ofit_er[i], linewidth=0, markerfacecolor="None", capsize=4, capthick=1,
-                 elinewidth=1, color=color[i])
-        ax2.set_xlabel('$T$')
-        ax2.set_ylabel("$dg/dT$")
-        ax2.set_title(f'ic={ic}, jc={jc}')
-        ax2.legend()
-        fig.tight_layout()
-        fig.show()
-
-    # Data to extrapolate the maxima
-    T_max = estimate_Tc_with_pade(sizes, T0, Tf, dg_dT_pade, return_T_max=True)[1]
-    dg_dT_pade_T_max = np.array([dg_dT_pade[i](T_max[i]) for i in range(nf)])
-
-    add_float = lambda f, float_value: lambda x: f(x) + float_value
-    width_L = np.array(
-        [root_scalar(add_float(dg_dT_pade[i], -dg_dT_pade_T_max[i] * 0.8), method='brentq', bracket=(T0, T_max[i])).root
-         for i in range(nf)])
-    width_R = np.array(
-        [root_scalar(add_float(dg_dT_pade[i], -dg_dT_pade_T_max[i] * 0.8), method='brentq', bracket=(T_max[i], Tf)).root
-         for i in range(nf)])
-    peak_width = width_R - width_L
-
-    z, fit_T_max_params = np.polyfit(1 / sizes[-3:] ** (1 / 3), T_max[-3:], 1, cov=True)
-    fit_T_max = np.poly1d(z)
-
-    # z2 = np.polyfit(1/np.log(sizes), T_max, 1)
-    # p2 = np.poly1d(z2)
-
-    dg_dT_pade_T_max = np.abs(dg_dT_pade_T_max)
-    z3, fit_1_over_dg_dT_T_max_params = np.polyfit(1 / sizes[-3:] ** (1 / 3), 1 / dg_dT_pade_T_max[-3:], 1, cov=True)
-    fit_1_over_dg_dT_T_max = np.poly1d(z3)
-
-    z4, fit_peak_width_params = np.polyfit(1 / sizes[-3:] ** (1 / 3), peak_width[-3:], 1, cov=True)
-    fit_peak_width = np.poly1d(z4)
-
-    print(f'Tc = {z[-1]}')
-
-    x_fit_T_max = np.linspace(0, 1.5 / sizes[0] ** (1 / 3), 100)
-    # xx2 = np.linspace(0, 1.5/np.log(sizes[0]), 100)
-
-    if out == 'figures':
-
-        fig, (ax1, ax3, ax4) = plt.subplots(ncols=3, figsize=figsize_in, dpi=dpi_in)
-        if adjacency != 'chimera' and adjacency != 'pegasus' and adjacency != 'zephyr':
-            ax1.plot(1 / sizes ** (1 / 3), T_max, "o")
-            ax1.plot(x_fit_T_max, fit_T_max(x_fit_T_max), "-")
-            ax1.set_xlabel('$1/N^{1/3}$')
-            ax1.set_ylabel("$T_c$")
-
-            # ax2.plot(1 / np.log(sizes), T_max, "o")
-            # ax2.plot(xx2, p2(xx2), "-")
-            # ax2.set_xlabel('$1/log(N)$')
-            # ax2.set_ylabel("$T_c$")
-
-            ax3.plot(1 / sizes ** (1 / 3), 1 / dg_dT_pade_T_max, "o")
-            ax3.plot(x_fit_T_max, fit_1_over_dg_dT_T_max(x_fit_T_max), "-")
-            ax3.set_xlabel('$1/N^{1/3}$')
-            ax3.set_ylabel("$(dg/dT|_{T_c})^{-1}$")
-            ax3.set_ylim(bottom=-0.1)
-
-            ax4.plot(1 / sizes ** (1 / 3), peak_width, "o")
-            ax4.plot(x_fit_T_max, fit_peak_width(x_fit_T_max), "-")
-            ax4.set_xlabel('$1/N^{1/3}$')
-            ax4.set_ylabel("Peak peak_width")
-
-        else:
-            ax1.plot(sizes, T_max, "o")
-            ax1.set_xlabel('$N$')
-            ax1.set_ylabel("$T_c$")
-
-            ax3.plot(sizes, dg_dT_pade_T_max, "o")
-            # ax3.plot(x_fit_T_max, fit_1_over_dg_dT_T_max(x_fit_T_max), "-")
-            ax3.set_xlabel('$N$')
-            ax3.set_ylabel("$(dg/dT|_{T_c})$")
-            ax3.set_ylim(bottom=-0.1)
-
-            ax4.plot(sizes, peak_width, "o")
-            # ax4.plot(x_fit_T_max, fit_peak_width(x_fit_T_max), "-")
-            ax4.set_xlabel('$N$')
-            ax4.set_ylabel("Peak peak_width")
-
-        fig.suptitle(f'Tc = {z[-1]}')
-        fig.tight_layout()
-        fig.show()
-
-    # fig, (ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=figsize_in, dpi=dpi_in)
-    # ax1.plot(1 / sizes ** (1 / 3), 1 / gdmax, "o")
-    # ax1.plot([0, 3 / sizes[2] ** (1 / 3)], [0, 3 / gdmax[2]], "-")
-    # ax1.set_xlabel('$1/N^{1/3}$')
-    # ax1.set_ylabel("$\\left(dg/dT|_{Max}\\right)^{-1}$")
-    #
-    # ax2.plot(1 / np.log(sizes), 1 / gdmax, "o")
-    # ax2.plot([0, 3 / np.log(sizes)[2]], [0, 3 / gdmax[2]], "-")
-    # ax2.set_xlabel('$1/\log(N)$')
-    # ax2.set_ylabel("$\\left(dg/dT|_{Max}\\right)^{-1}$")
-    #
-    # ax3.plot(1 / (np.log(sizes)) ** 2, 1 / gdmax, "o")
-    # ax3.plot([0, 3 / (np.log(sizes)[2]) ** 2], [0, 3 / gdmax[2]], "-")
-    # ax3.set_xlabel('$1/\log(N)^{2}$')
-    # ax3.set_ylabel("$\\left(dg/dT|_{Max}\\right)^{-1}$")
-    # fig.tight_layout()
-    # fig.show()
-    if out == 'fits':
-        return dg_dT_pade, T_max, dg_dT_pade_T_max, peak_width, fit_T_max, fit_1_over_dg_dT_T_max, fit_peak_width, fit_T_max_params, fit_1_over_dg_dT_T_max_params, fit_peak_width_params
-    else:
-        return inopt
 
 #%% Estimate Tc from pade approximant of dgdT
 def estimate_Tc_with_pade(sizes, T0, Tf, dg_dT_pade, return_T_max=False):
@@ -643,35 +495,33 @@ def estimate_peak_width(sizes, T0, Tf, dg_dT_pade, Tc, peak_height):
     peak_width_bootstrap = width_R - width_L
     return peak_width_bootstrap
 
-def estimate_Tc_with_pade_bootstrap(sizes, T_vs_size_best, error_vs_size_best, dg_dT_bootstrap_vs_size_best, ic=[5], jc=[6],
+def estimate_Tc_with_pade_bootstrap(sizes, T_vs_size_best, error_dg_dT_vs_size_best, dg_dT_bootstrap_vs_size_best, ic=[5], jc=[6],
                                     ntr=10, maxfev=10000):
 
-    T0 = T_vs_size_best[0]
-    Tf = T_vs_size_best[-1]
+    T0 = T_vs_size_best[0][0]
+    Tf = T_vs_size_best[0][-1]
 
     n_bootstrap = len(dg_dT_bootstrap_vs_size_best[0])
     Tc_bootstrap = np.zeros([n_bootstrap, len(sizes)])
-    peak_height_bootstrap = np.zeros([n_bootstrap, len(sizes)])
+    inv_peak_height_bootstrap = np.zeros([n_bootstrap, len(sizes)])
     peak_width_bootstrap = np.zeros([n_bootstrap, len(sizes)])
 
     for i_b in range(n_bootstrap):
         dgdT_bootstrap = [dgdT[i_b]for dgdT in dg_dT_bootstrap_vs_size_best]
 
         try:
-            # dg_dT_pade = pade_best_fast_different_ic_jc_each(T_vs_size_best, dgdT_bootstrap, np.array(error_vs_size_best), ic=ic, jc=jc, ntr=ntr, maxfev=maxfev)
-            dg_dT_pade = pade_best_specific_ic_jc(T_vs_size_best, dgdT_bootstrap, np.array(error_vs_size_best), ntr, ic, jc, maxfev=maxfev)[0]
+            dg_dT_pade = pade_best_fast_different_ic_jc_each(T_vs_size_best, dgdT_bootstrap, error_dg_dT_vs_size_best, ic=ic, jc=jc, ntr=ntr, maxfev=maxfev)
             Tc_bootstrap[i_b, :] = estimate_Tc_with_pade(sizes, T0, Tf, dg_dT_pade, return_T_max=True)
-            peak_height_bootstrap[i_b, :] = np.array([dg_dT_pade[i](Tc_bootstrap[i_b, i]) for i in range(len(sizes))])
-            peak_width_bootstrap[i_b, :] = estimate_peak_width(sizes, T0, Tf,dg_dT_pade, Tc_bootstrap[i_b, :], peak_height_bootstrap[i_b, :])
+            inv_peak_height_bootstrap[i_b, :] = 1/np.array([dg_dT_pade[i](Tc_bootstrap[i_b, i]) for i in range(len(sizes))])
+            peak_width_bootstrap[i_b, :] = estimate_peak_width(sizes, T0, Tf,dg_dT_pade, Tc_bootstrap[i_b, :], 1/inv_peak_height_bootstrap[i_b, :])
 
         except:
-            continue
-        #     Tc_bootstrap[i_b, :] = np.nan*np.ones(len(sizes))
-        #     peak_height_bootstrap[i_b, :] = np.nan*np.ones(len(sizes))
-        #     peak_width_bootstrap[i_b, :] = np.nan*np.ones(len(sizes))
+            Tc_bootstrap[i_b, :] = np.nan*np.ones(len(sizes))
+            inv_peak_height_bootstrap[i_b, :] = np.nan*np.ones(len(sizes))
+            peak_width_bootstrap[i_b, :] = np.nan*np.ones(len(sizes))
 
 
-    return Tc_bootstrap, peak_height_bootstrap, peak_width_bootstrap
+    return Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap
 
 
 def estimate_Tc_with_pade_bootstrap_parallel(sizes, T_vs_size, error_vs_size, dg_dT_bootstrap_vs_size, ic=[5], jc=[6],
@@ -688,27 +538,67 @@ def estimate_Tc_with_pade_bootstrap_parallel(sizes, T_vs_size, error_vs_size, dg
                                                    ic, jc, ntr, maxfev)
                                                   for i in range(threads))
     Tc_bootstrap = []
-    peak_height_bootstrap = []
+    inv_peak_height_bootstrap = []
     peak_width_bootstrap = []
 
     for Tc_height_widht in Tc_height_widht_bootstrap:
         Tc_bootstrap.append(Tc_height_widht[0])
-        peak_height_bootstrap.append(Tc_height_widht[1])
+        inv_peak_height_bootstrap.append(Tc_height_widht[1])
         peak_width_bootstrap.append(Tc_height_widht[2])
 
 
     Tc_bootstrap = np.array(Tc_bootstrap).reshape((-1, len(sizes)))
-    peak_height_bootstrap = np.array(peak_width_bootstrap).reshape((-1, len(sizes)))
+    inv_peak_height_bootstrap = np.array(inv_peak_height_bootstrap).reshape((-1, len(sizes)))
     peak_width_bootstrap = np.array(peak_width_bootstrap).reshape((-1, len(sizes)))
 
     # Remove outliers
     for Tc_bootstrap_vs_size in Tc_bootstrap.T:
         Tc_bootstrap_vs_size[np.abs(Tc_bootstrap_vs_size - np.nanmean(Tc_bootstrap_vs_size)) > 4 * np.nanstd(Tc_bootstrap_vs_size)] = np.nan
 
-    for peak_height_bootstrap_vs_size in peak_height_bootstrap.T:
-        peak_height_bootstrap_vs_size[np.abs(peak_height_bootstrap_vs_size - np.nanmean(peak_height_bootstrap_vs_size)) > 4 * np.nanstd(peak_height_bootstrap_vs_size)] = np.nan
+    for inv_peak_height_bootstrap_vs_size in inv_peak_height_bootstrap.T:
+        inv_peak_height_bootstrap_vs_size[np.abs(inv_peak_height_bootstrap_vs_size - np.nanmean(inv_peak_height_bootstrap_vs_size)) > 4 * np.nanstd(inv_peak_height_bootstrap_vs_size)] = np.nan
 
     for peak_width_bootstrap_size in peak_width_bootstrap.T:
         peak_width_bootstrap_size[np.abs(peak_width_bootstrap_size - np.nanmean(peak_width_bootstrap_size)) > 4 * np.nanstd(peak_width_bootstrap_size)] = np.nan
 
-    return Tc_bootstrap, peak_height_bootstrap, peak_width_bootstrap
+    Tc = np.nanmean(Tc_bootstrap, 0)
+    Tc_err = 2 * np.nanstd(Tc_bootstrap, 0)
+
+    inv_peak_height = np.nanmean(inv_peak_height_bootstrap, 0)
+    inv_peak_height_err = 2 * np.nanstd(inv_peak_height_bootstrap, 0)
+
+    peak_width = np.nanmean(peak_width_bootstrap, 0)
+    peak_width_err = 2 * np.nanstd(peak_width_bootstrap, 0)
+
+    return Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap, Tc, Tc_err, inv_peak_height, inv_peak_height_err, peak_width, peak_width_err
+
+# %%
+def extrapolate_thermodynamic_limit_mean_field_graphs(adjacency, sizes, Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap):
+
+    Tc_inf_bootstrap = np.zeros(len(Tc_bootstrap))
+    inv_peak_height_inf_bootstrap = np.zeros(len(inv_peak_height_bootstrap))
+    peak_width_inf_bootstrap = np.zeros(len(peak_width_bootstrap))
+
+    for i, (Tc, peak_height, peak_width) in enumerate(
+            zip(Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap)):
+        try:
+            Tc_inf_bootstrap[i] = np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], Tc[-2:], 1)[1]
+            inv_peak_height_inf_bootstrap[i] = \
+            np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], peak_height[-2:] ** (-1), 1)[1]
+            peak_width_inf_bootstrap[i] = \
+            np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], peak_width[-2:], 1)[1]
+        except:
+            Tc_inf_bootstrap[i] = np.nan
+            inv_peak_height_inf_bootstrap[i] = np.nan
+            peak_width_inf_bootstrap[i] = np.nan
+
+    Tc_inf = np.nanmean(Tc_inf_bootstrap)
+    Tc_inf_err = 2 * np.nanstd(Tc_inf_bootstrap)
+
+    inv_peak_height_inf = np.nanmean(inv_peak_height_inf_bootstrap)
+    inv_peak_height_inf_err = 2 * np.nanstd(inv_peak_height_inf_bootstrap)
+
+    peak_width_inf = np.nanmean(peak_width_inf_bootstrap)
+    peak_width_inf_err = 2 * np.nanstd(peak_width_inf_bootstrap)
+
+    return Tc_inf, Tc_inf_err, inv_peak_height_inf, inv_peak_height_inf_err, peak_width_inf, peak_width_inf_err

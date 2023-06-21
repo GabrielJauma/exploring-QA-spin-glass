@@ -105,11 +105,11 @@ sizes_vs_adj = [_ for _ in range(len(adjacencies))]
 
 for i, adj in enumerate(adjacencies):
     if adj == 'chimera':
-        sizes_vs_adj[i] = [72, 200, 392, 800, 1152, 1568]
+        sizes_vs_adj[i] = [72, 200, 392, 800, 1568]
     elif adj == 'pegasus':
-        sizes_vs_adj[i] = [128, 256, 448, 960, 1288, 1664]
+        sizes_vs_adj[i] = [128, 256, 448, 960, 1664]
     elif adj == 'zephyr':
-        sizes_vs_adj[i] = [48, 160, 336, 576, 880, 1248]
+        sizes_vs_adj[i] = [48, 160, 336, 576, 1248]
     else:
         sizes_vs_adj[i] = sizes
 
@@ -118,7 +118,7 @@ color_vs_size = ['turquoise',  'tab:olive', 'tab:green', 'tab:red', 'tab:purple'
 marker_vs_adjacency = ['^', '>', 'v', '<', '1', '2', '3', '.', '4', 'P', 'd', '*']
 
 # %% Choose an adjacency
-adj_index = 0
+adj_index = 10
 only_max_MCS = True
 n_bootstrap = 36*10
 data_type = 'all'
@@ -130,6 +130,7 @@ T0 = T0_Tf_vs_adj[adj_index][0]
 Tf = T0_Tf_vs_adj[adj_index][1]
 add = add_vs_adj[adj_index]
 max_MCS_vs_size = [max_MCSs_vs_adj_binned[adj_index], max_MCSs_vs_adj_old[adj_index], max_MCSs_vs_adj_fast[adj_index]]
+
 # %% Read data
 MCS_avg_vs_size, N_configs_vs_size, copies_vs_size, labels_vs_size, T_vs_size, q2_vs_size, q4_vs_size, \
     ql_vs_size, U_vs_size, U2_vs_size, σ2_q2_bin_vs_size, σ2_q4_bin_vs_size, q_dist_vs_size = \
@@ -140,18 +141,18 @@ copies = copies_vs_size[0][0]
 T_indices = np.linspace(0, copies-1, 10, dtype='int')
 colors = plt.get_cmap('plasma')(np.linspace(0, 255, 10).astype('int'))
 
-# %% Calculate Binder cumulant and its derivative with errors using bootstrap
+# %% Calculate g and dgdT with errors using bootstrap
 g_vs_size, g_bootstrap_vs_size, error_vs_size, dg_dT_vs_size, dg_dT_bootstrap_vs_size, error_dg_dT_vs_size =\
     sm.binder_cumulant_parallel(sizes, T_vs_size, MCS_avg_vs_size, q2_vs_size, q4_vs_size, n_bootstrap)
 
 # %% Choose the optimal simulation (in terms of MCS and N_configs) for each size
-T_vs_size_best, g_vs_size_best, g_bootstrap_vs_size_best, error_vs_size_best, \
-    dg_dT_vs_size_best, dg_dT_bootstrap_vs_size_best, error_dg_dT_vs_size_best = \
-    sm.choose_optimal_MCS_N_config(sizes, N_configs_vs_size, T_vs_size, g_vs_size, g_bootstrap_vs_size, error_vs_size,
+N_configs_vs_size_best, MCS_avg_vs_size_best, T_vs_size_best, g_vs_size_best, g_bootstrap_vs_size_best, \
+    error_vs_size_best, dg_dT_vs_size_best, dg_dT_bootstrap_vs_size_best, error_dg_dT_vs_size_best = \
+    sm.choose_optimal_MCS_N_config(sizes, N_configs_vs_size, MCS_avg_vs_size, T_vs_size, g_vs_size, g_bootstrap_vs_size, error_vs_size,
                                    dg_dT_vs_size, dg_dT_bootstrap_vs_size, error_dg_dT_vs_size,
                                    MCS_N_config_condition='max_MCS_with_a_minimum_of_N_configs', min_N_config=1000)
 
-# %% Plot Binder cumulant
+# %% Plot g
 fig, ax1 = plt.subplots()
 for size_index, (T, g, err) in enumerate(zip(T_vs_size_best, g_vs_size_best, error_vs_size_best)):
     ax1.errorbar(T, g, yerr=err,
@@ -162,22 +163,22 @@ ax1.set_xlim([0, Tf])
 fig.tight_layout()
 fig.show()
 
-# %% Plot numerical derivative of Binder cumulant
+# %% Plot dgdT
 fig, ax = plt.subplots()
 for size_index, (T, dg_dT, error_dg_dT) in enumerate(zip(T_vs_size_best, dg_dT_vs_size_best, error_dg_dT_vs_size_best)):
     ax.errorbar(T, -dg_dT, yerr=error_dg_dT, label=f'{sizes[size_index]}', color=color_vs_size[size_index],
                 markersize=2, capsize=2, capthick=1, elinewidth=1, linewidth=0.5)
 fig.show()
 
-# %% Plot error of numerical derivative of Binder cumulant
+# %% Plot error of dgdT
 fig, ax = plt.subplots()
 for size_index, (T, error_dg_dT) in enumerate(zip(T_vs_size_best, error_dg_dT_vs_size_best)):
     ax.plot(T, error_dg_dT, label=f'{sizes[size_index]}', color=color_vs_size[size_index], linewidth=0.5)
 fig.show()
 
-# %% PROCESS DATA FOR FIGURES 2 and 5
-
-# %%  Calculate pade fits of the derivative of the Binder cumulant
+# %% PROCESS DATA FOR FIGURES 2 AND 5 - g and dgdT
+pass
+# %%  Calculate pade fits of dgdT
 dg_dT_pade, T_c, peak_height = pf.pade_fss(sizes_vs_adj[adj_index], T_vs_size_best, dg_dT_vs_size_best,
                                                   error_dg_dT_vs_size_best, T_term_vs_size=False, ntr=10,
                                                   ic=ic_jc_vs_adj[adj_index][0], jc=ic_jc_vs_adj[adj_index][1],
@@ -197,63 +198,113 @@ np.savez(fname, T_vs_size_best=T_vs_size_best, g_vs_size_best=g_vs_size_best, er
          T_c=T_c, T_pade=T_pade, dg_dT_pade_array=dg_dT_pade_array, peak_height=peak_height,
          allow_pickle=True)
 
-# %% PROCESS DATA FOR FIGURES 3 and 6
+# %% PROCESS DATA FOR FIGURE 3 - Finite size scaling of dgdT for mean field graphs
+pass
+# %% Calculate Tc (peak position), peak height and peak widht of the pade approximants of dgdT
+Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap, \
+    Tc, Tc_err, inv_peak_height, inv_peak_height_err, peak_width, peak_width_err = \
+    pf.estimate_Tc_with_pade_bootstrap_parallel(sizes_vs_adj[adj_index], T_vs_size_best, error_dg_dT_vs_size_best,
+                                                dg_dT_bootstrap_vs_size_best, ic=ic_jc_vs_adj[adj_index][0],
+                                                jc=ic_jc_vs_adj[adj_index][1], ntr=10, maxfev=10000, threads=cpu_count())
 
-# %% Claculate Tc
-Tc_bootstrap, peak_height_bootstrap, peak_width_bootstrap = pf.estimate_Tc_with_pade_bootstrap_parallel(
-    sizes_vs_adj[adj_index], T_vs_size_best, error_dg_dT_vs_size_best, dg_dT_bootstrap_vs_size_best,
-    ic=ic_jc_vs_adj[adj_index][0], jc=ic_jc_vs_adj[adj_index][1], ntr=10, maxfev=10000, threads=cpu_count())
+# %% Extrapolate previous values to thermodynamic limit for the mean field case (only fig. 3)
+Tc_inf, Tc_inf_err, inv_peak_height_inf, inv_peak_height_inf_err, peak_width_inf, peak_width_inf_err =\
+    pf.extrapolate_thermodynamic_limit_mean_field_graphs(adjacency, sizes, Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap)
 
-Tc = np.nanmean(Tc_bootstrap, 0)
-Tc_err = 2 * np.nanstd(Tc_bootstrap, 0)
-
-peak_height = np.nanmean(peak_height_bootstrap, 0)
-peak_height_err = 2 * np.nanstd(peak_height_bootstrap, 0)
-
-peak_width = np.nanmean(peak_width_bootstrap, 0)
-peak_width_err = 2 * np.nanstd(peak_width_bootstrap, 0)
-
-# %% Histogram of bootstrap variables to check that it is gaussian like
+# %% Histogram of bootstrap variables to check that they are gaussian like
 fig, ax = plt.subplots()
 ax.hist(Tc_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
 ax.bar(Tc, [100]*len(sizes), 0.0005, color='k')
 fig.show()
 
 fig, ax = plt.subplots()
-ax.hist(Tc_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
-ax.bar(Tc, [100]*len(sizes), 0.0005, color='k')
+ax.hist(inv_peak_height_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
+ax.bar(inv_peak_height, [100]*len(sizes), 0.0005, color='k')
 fig.show()
 
 fig, ax = plt.subplots()
-ax.hist(Tc_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
-ax.bar(Tc, [100]*len(sizes), 0.0005, color='k')
-fig.show()
-# %% Tc histogram
-
-fig, ax = plt.subplots()
-ax.hist(Tc_bootstrap, 100, histtype='stepfilled', density=True)
+ax.hist(peak_width_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
+ax.bar(peak_width, [100]*len(sizes), 0.0005, color='k')
 fig.show()
 
 # %% Store processed data
-T0 = T0_Tf_vs_adj[adj_index][0]
-Tf = T0_Tf_vs_adj[adj_index][1]
+fname = f'Processed_Data/fss_dg_dT_adj={adjacencies[adj_index]}_add={add_vs_adj[adj_index]}_read_mode={MCS_N_config_condition}_min_N_config={min_N_config}'
+np.savez(fname, Tc=Tc, Tc_err=Tc_err, inv_peak_height=inv_peak_height, inv_peak_height_err=inv_peak_height_err, peak_width=peak_width,
+         peak_width_err=peak_width_err, Tc_inf=Tc_inf, Tc_inf_err=Tc_inf_err, inv_peak_height_inf=inv_peak_height_inf,
+         inv_peak_height_inf_err=inv_peak_height_inf_err, peak_width_inf=peak_width_inf,
+         peak_width_inf_err=peak_width_inf_err, allow_pickle=True)
 
-T_pade = np.linspace(T0 + (Tf - T0) * 0.1, Tf - (Tf - T0) * 0.1, 1000)
-dg_dT_pade_array = [ dg_dT_pade[size_index](T_pade) for size_index in range(len(sizes))]
-dg_dT_pade_T_max_array = [ dg_dT_pade[size_index](T_max[size_index]) for size_index in range(len(sizes))]
+# %% PROCESS DATA FOR FIGURES 4 AND 6 - Tc vs adjacency
+pass
+# %% Tc vs adjacency
+# graphs = 'mean_field'  # Fig. 4
+graphs = 'Dwave' # Fig. 6
+write_file = True
 
-x_fit_T_max = np.linspace(0, 1.5/sizes_vs_adj[adj_index][0]**(1/3), 100)
-fit_T_max_array = fit_T_max(x_fit_T_max)
-fit_1_over_dg_dT_T_max_array = fit_1_over_dg_dT_T_max(x_fit_T_max)
-fit_peak_width_array = fit_peak_width(x_fit_T_max)
+if graphs == 'Dwave':
+    adj_iterable = range(len(adjacencies)-3, len(adjacencies))
+elif graphs == 'mean_field':
+    adj_iterable = range(8)
 
-fname = f'Processed_Data/g_and_g_pade_and_dg_dT_inset_adj={adjacencies[adj_index]}_add={add_vs_adj[adj_index]}_read_mode={MCS_N_config_condition}_min_N_config={min_N_config}'
-np.savez(fname, T_vs_size_best=T_vs_size_best, g_vs_size_best=g_vs_size_best, error_vs_size_best=error_vs_size_best, dg_dT_vs_size_best=dg_dT_vs_size_best,
-         error_dg_dT_vs_size_best=error_dg_dT_vs_size_best, T_max=T_max, Tc_max_err=Tc_max_err, T_pade=T_pade, dg_dT_pade_array=dg_dT_pade_array,
-         dg_dT_pade_T_max=dg_dT_pade_T_max, dg_dT_pade_T_max_err=dg_dT_pade_T_max_err, sizes=sizes, sizes_vs_adj=sizes_vs_adj[adj_index], x_fit_T_max=x_fit_T_max,
-         fit_T_max_array=fit_T_max_array, fit_1_over_dg_dT_T_max_array=fit_1_over_dg_dT_T_max_array, peak_width=peak_width,  peak_width_err=peak_width_err,
-         fit_peak_width_array=fit_peak_width_array,dg_dT_pade_T_max_inf=dg_dT_pade_T_max_inf, dg_dT_pade_T_max_inf_err=dg_dT_pade_T_max_inf_err,
-         peak_width_inf=peak_width_inf,peak_width_inf_err=peak_width_inf_err,Tc=Tc,Tc_err=Tc_err, allow_pickle=True)
+Tc_vs_adj = [[] for _ in range(len(adjacencies))]
+Tc_err_vs_adj = [[] for _ in range(len(adjacencies))]
+Tc_inf_vs_adj = [[] for _ in range(len(adjacencies))]
+Tc_inf_err_vs_adj = [[] for _ in range(len(adjacencies))]
+
+if write_file:
+    file_simulation_info = open('simulation_info.txt', 'a')
+    file_simulation_info.write('Adjacency & Size & Min. T & Max. T & Tempering copies & MCS & Replicas & Tc \\\\ \n')
+
+for adj_index in adj_iterable:
+
+    MCS_avg_vs_size, N_configs_vs_size, copies_vs_size, labels_vs_size, T_vs_size, q2_vs_size, q4_vs_size, \
+        ql_vs_size, U_vs_size, U2_vs_size, σ2_q2_bin_vs_size, σ2_q4_bin_vs_size, q_dist_vs_size = \
+        rfc.read_data(adjacencies[adj_index], distribution, sizes, add_vs_adj[adj_index],
+                      T0_Tf_vs_adj[adj_index][0], T0_Tf_vs_adj[adj_index][1], MCS_avg_0,
+                      [max_MCSs_vs_adj_binned[adj_index], max_MCSs_vs_adj_old[adj_index], max_MCSs_vs_adj_fast[adj_index]],
+                      data_type='all', only_max_MCS=only_max_MCS)
+
+    g_vs_size, g_bootstrap_vs_size, error_vs_size, dg_dT_vs_size, dg_dT_bootstrap_vs_size, error_dg_dT_vs_size = \
+        sm.binder_cumulant_parallel(sizes_vs_adj[adj_index], T_vs_size, MCS_avg_vs_size, q2_vs_size, q4_vs_size, n_bootstrap)
+
+    N_configs_vs_size_best, MCS_avg_vs_size_best, T_vs_size_best, g_vs_size_best, g_bootstrap_vs_size_best, \
+        error_vs_size_best, dg_dT_vs_size_best, dg_dT_bootstrap_vs_size_best, error_dg_dT_vs_size_best = \
+        sm.choose_optimal_MCS_N_config(sizes_vs_adj[adj_index], N_configs_vs_size, MCS_avg_vs_size, T_vs_size, g_vs_size,
+                                       g_bootstrap_vs_size, error_vs_size, dg_dT_vs_size, dg_dT_bootstrap_vs_size,
+                                       error_dg_dT_vs_size,
+                                       MCS_N_config_condition='max_MCS_with_a_minimum_of_N_configs', min_N_config=1000)
+
+    estimate_Tc_out = pf.estimate_Tc_with_pade_bootstrap_parallel(
+        sizes_vs_adj[adj_index], T_vs_size_best, error_dg_dT_vs_size_best, dg_dT_bootstrap_vs_size_best,
+        ic=ic_jc_vs_adj[adj_index][0], jc=ic_jc_vs_adj[adj_index][1],
+        ntr=10, maxfev=10000, threads=min(n_bootstrap, cpu_count()-1))
+
+    Tc_bootstrap, Tc_vs_adj[adj_index], Tc_err_vs_adj[adj_index] = \
+        estimate_Tc_out[0], estimate_Tc_out[3], estimate_Tc_out[4]
+
+    if graphs == 'mean_field':
+        Tc_inf_vs_adj[adj_index], Tc_inf_err_vs_adj[adj_index]= \
+            pf.extrapolate_thermodynamic_limit_mean_field_graphs(sizes_vs_adj[adj_index], Tc_bootstrap,
+                                                                 inv_peak_height_bootstrap, peak_width_bootstrap)[:2]
+    # else:
+    #     Tc_inf_vs_adj[adj_index] = np.nan
+    #     Tc_inf_err_vs_adj[adj_index] = np.nan
+
+    if write_file:
+        for size_index in range(len(sizes)):
+            add = add_vs_adj[adj_index]
+            add_str = f'{add}'
+            file_simulation_info.write(f'{adjacencies[adj_index]}{ bool(add>0)*add_str } & {sizes_vs_adj[adj_index][size_index]} & {T0} & {Tf} & '
+                                       f'{copies_vs_size[size_index][0]} & {MCS_avg_vs_size_best[size_index]} & {N_configs_vs_size_best[size_index]}  \\\\ \n')
+
+if write_file:
+    file_simulation_info.close()
+
+# %% Store processed data
+fname = f'Processed_Data/Tc_vs_adj_{graphs}_read_mode={MCS_N_config_condition}_min_N_config={min_N_config}'
+np.savez(fname,Tc_vs_adj=Tc_vs_adj, Tc_err_vs_adj=Tc_err_vs_adj, Tc_inf_vs_adj=Tc_inf_vs_adj,
+         Tc_inf_err_vs_adj=Tc_inf_err_vs_adj,  allow_pickle=True)
+
 # %% BINNED DATA ONLY Plot Autocorrelation time and thermal average error of q2
 error_q2_T_vs_size = np.zeros([len(sizes), copies])
 tau_q2_T_vs_size = np.zeros([len(sizes), copies])

@@ -98,13 +98,13 @@ def binder_cumulant_parallel(sizes, T_vs_size, MCS_avg_vs_size, q2_vs_size, q4_v
     return g_vs_size, g_bootstrap_vs_size, error_vs_size, dg_dT_vs_size, dg_dT_bootstrap_vs_size, error_dg_dT_vs_size
 
 # %% Choose the optimal simulation in terms of MCS and N_configs
-def choose_optimal_MCS_N_config(sizes, N_configs_vs_size, T_vs_size, g_vs_size, g_bootstrap_vs_size,
+def choose_optimal_MCS_N_config(sizes, N_configs_vs_size, MCS_avg_vs_size, T_vs_size, g_vs_size, g_bootstrap_vs_size,
                                 error_vs_size, dg_dT_vs_size, dg_dT_bootstrap_vs_size, error_dg_dT_vs_size,
                                 MCS_N_config_condition='max_MCS_with_a_minimum_of_N_configs', min_N_config=1000):
 
-    T_vs_size_best, g_vs_size_best, g_bootstrap_vs_size_best, error_vs_size_best, \
+    N_configs_vs_size_best, MCS_avg_vs_size_best, T_vs_size_best, g_vs_size_best, g_bootstrap_vs_size_best, error_vs_size_best, \
         dg_dT_vs_size_best, dg_dT_bootstrap_vs_size_best, error_dg_dT_vs_size_best = \
-        [[[] for _ in range(len(sizes))] for _ in range(7)]
+        [[[] for _ in range(len(sizes))] for _ in range(9)]
 
     for size_index in range(len(sizes)):
         assigned = False
@@ -123,6 +123,8 @@ def choose_optimal_MCS_N_config(sizes, N_configs_vs_size, T_vs_size, g_vs_size, 
                     else:
                         k -= 1
 
+        N_configs_vs_size_best[size_index] = N_configs_vs_size[size_index][k]
+        MCS_avg_vs_size_best[size_index] = MCS_avg_vs_size[size_index][k]
         T_vs_size_best[size_index] = T_vs_size[size_index][k]
         g_vs_size_best[size_index] = g_vs_size[size_index][k]
         g_bootstrap_vs_size_best[size_index] = g_bootstrap_vs_size[size_index][k]
@@ -131,5 +133,6 @@ def choose_optimal_MCS_N_config(sizes, N_configs_vs_size, T_vs_size, g_vs_size, 
         dg_dT_bootstrap_vs_size_best[size_index] = dg_dT_bootstrap_vs_size[size_index][k]
         error_dg_dT_vs_size_best[size_index] = error_dg_dT_vs_size[size_index][k]
 
-    return T_vs_size_best, g_vs_size_best, g_bootstrap_vs_size_best, error_vs_size_best, \
+    return N_configs_vs_size_best, MCS_avg_vs_size_best, T_vs_size_best, g_vs_size_best, \
+        g_bootstrap_vs_size_best, error_vs_size_best, \
         dg_dT_vs_size_best, dg_dT_bootstrap_vs_size_best, error_dg_dT_vs_size_best
