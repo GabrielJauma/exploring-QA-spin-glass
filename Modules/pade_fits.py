@@ -579,12 +579,12 @@ def extrapolate_thermodynamic_limit_mean_field_graphs(adjacency, sizes, Tc_boots
     inv_peak_height_inf_bootstrap = np.zeros(len(inv_peak_height_bootstrap))
     peak_width_inf_bootstrap = np.zeros(len(peak_width_bootstrap))
 
-    for i, (Tc, peak_height, peak_width) in enumerate(
+    for i, (Tc, inv_peak_height, peak_width) in enumerate(
             zip(Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap)):
         try:
             Tc_inf_bootstrap[i] = np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], Tc[-2:], 1)[1]
             inv_peak_height_inf_bootstrap[i] = \
-            np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], peak_height[-2:] ** (-1), 1)[1]
+            np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], inv_peak_height[-2:], 1)[1]
             peak_width_inf_bootstrap[i] = \
             np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], peak_width[-2:], 1)[1]
         except:

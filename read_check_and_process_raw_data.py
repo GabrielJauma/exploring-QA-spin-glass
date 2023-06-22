@@ -75,8 +75,8 @@ max_MCSs_vs_adj_binned = MCS_avg_0 * 2 **  max_MCSs_vs_adj_binned
 
 max_MCSs_vs_adj_fast = np.array([[0, 0, 6, 7, 9],
                                  [0, 0, 6, 7, 9],
-                                 [4, 5, 6, 7, 8],
-                                 [4, 5, 6, 7, 8],
+                                 [4, 5, 6, 7, 9],
+                                 [4, 5, 6, 7, 9],
 
                                  [4, 5, 6, 7, 8],
                                  [0, 0, 0, 0, 0],
@@ -89,7 +89,7 @@ max_MCSs_vs_adj_fast = np.array([[0, 0, 6, 7, 9],
 max_MCSs_vs_adj_fast = MCS_avg_0 * 2 **  max_MCSs_vs_adj_fast
 max_MCSs_vs_adj_old = [MCS_avg_0 * 2 ** np.array([1, 2, 5, 6, 7]),
                        MCS_avg_0 * 2 ** np.array([5, 5, 5, 5, 5]) + 4,
-                       np.array([80002, 80002, 160002, 640001, 0, 640002]),
+                       np.array([80002, 80002, 160002, 640001, 640002]),
                        MCS_avg_0 * 2 ** np.array([1, 2, 4, 5, 5]),
                        MCS_avg_0 * 2 ** np.array([2, 2, 3, 4, 5]),
                        MCS_avg_0 * 2 ** np.array([2, 2, 3, 4, 5]),
@@ -118,10 +118,10 @@ color_vs_size = ['turquoise',  'tab:olive', 'tab:green', 'tab:red', 'tab:purple'
 marker_vs_adjacency = ['^', '>', 'v', '<', '1', '2', '3', '.', '4', 'P', 'd', '*']
 
 # %% Choose an adjacency
-adj_index = 10
-only_max_MCS = True
+adj_index = 9
+only_max_MCS = False  # Must be 'False' for thermalization tests, 'True' to read faster for the rest
 n_bootstrap = 36*10
-data_type = 'all'
+data_type = 'binned'  # Must be 'binned' for thermalization tests
 MCS_N_config_condition = 'max_MCS_with_a_minimum_of_N_configs'
 min_N_config = 1000
 
@@ -135,11 +135,6 @@ max_MCS_vs_size = [max_MCSs_vs_adj_binned[adj_index], max_MCSs_vs_adj_old[adj_in
 MCS_avg_vs_size, N_configs_vs_size, copies_vs_size, labels_vs_size, T_vs_size, q2_vs_size, q4_vs_size, \
     ql_vs_size, U_vs_size, U2_vs_size, σ2_q2_bin_vs_size, σ2_q4_bin_vs_size, q_dist_vs_size = \
     rfc.read_data(adjacency, distribution, sizes, add, T0, Tf, MCS_avg_0, max_MCS_vs_size, data_type, only_max_MCS=only_max_MCS)
-
-# Define temperatures for the plots
-copies = copies_vs_size[0][0]
-T_indices = np.linspace(0, copies-1, 10, dtype='int')
-colors = plt.get_cmap('plasma')(np.linspace(0, 255, 10).astype('int'))
 
 # %% Calculate g and dgdT with errors using bootstrap
 g_vs_size, g_bootstrap_vs_size, error_vs_size, dg_dT_vs_size, dg_dT_bootstrap_vs_size, error_dg_dT_vs_size =\
@@ -176,7 +171,72 @@ for size_index, (T, error_dg_dT) in enumerate(zip(T_vs_size_best, error_dg_dT_vs
     ax.plot(T, error_dg_dT, label=f'{sizes[size_index]}', color=color_vs_size[size_index], linewidth=0.5)
 fig.show()
 
-# %% PROCESS DATA FOR FIGURES 2 AND 5 - g and dgdT
+#%% PROCESS DATA FOR FIGURES 9, 10, 11, 12 - Thermalization tests. TO PROCESS THIS DATA YOU MUST CHOOOSE data_type='binned' and only_max_MCS = False
+size_index = 3
+# %%  Thermalization test 1 - Logarithmic binning method
+copies = len(T_vs_size_best[size_index])
+n_conf = N_configs_vs_size_best[size_index]
+n_MCS = len(MCS_avg_vs_size[size_index])
+error_N = np.zeros([n_conf, n_MCS - 1, copies])
+
+for k, label in enumerate(labels_vs_size[size_index][-1]):
+    for i in reversed(range(n_MCS)):
+        index = np.where(labels_vs_size[size_index][i] == label)[0][0]
+        if i == n_MCS - 1:
+            q2_converged = q2_vs_size[size_index][i][index]
+        else:
+            error_N[k, i] = q2_converged - q2_vs_size[size_index][i][index]
+
+error_q2_logarithmic_binning = error_N.mean(0)
+error_std_q2_logarithmic_binning = error_N.std(0)
+
+# %%  Thermalization test 2 - Cluster link overlap
+T = T_vs_size[size_index][-1]
+cluster_link_convergence = np.zeros([n_MCS, copies])
+for MCS_index in range(n_MCS):
+    U = U_vs_size[size_index][MCS_index].mean(0)
+    ql = ql_vs_size[size_index][MCS_index].mean(0)
+    cluster_link_convergence[MCS_index] = 1 - T * np.abs(U) / 1.5 - ql
+
+# %%  Thermalization test 3 - Autocorrelation time and thermal average error of q2
+σ2_q2_bin_t = σ2_q2_bin_vs_size[size_index][-1]
+MCS_avg = MCS_avg_vs_size[size_index][-1]
+
+error_q2_vs_T = [_ for _ in range(copies)]
+tau_q2_vs_T = [_ for _ in range(copies)]
+
+σ2_q2_bin_c = σ2_q2_bin_t.mean(0)[:, 0]
+M0 = MCS_avg
+n_bins = σ2_q2_bin_c.shape[0]
+bins = np.arange(n_bins)
+
+for T_index in range(copies):
+    σ2_q2_bin_c = σ2_q2_bin_t.mean(0)[:, T_index]
+
+    M_bin = [M0 / 2 ** bin for bin in bins]
+    error_q2_vs_T[T_index] = np.array([np.sqrt((1 / M) * sigma) for M, sigma in zip(M_bin, σ2_q2_bin_c)])
+
+    tau_q2_vs_T[T_index]  = 2 ** bins * σ2_q2_bin_c[bins] / σ2_q2_bin_c[0]
+
+# %%  Thermalization test 4 - P(q)
+replica_index = 0
+
+dist = np.linspace(-1, 1, 50)
+q_dist = q_dist_vs_size[size_index][-1]
+q_dist_vs_T = np.zeros([50,copies])
+
+for T_index in range(copies):
+    q_dist_vs_T[:,T_index] = q_dist[replica_index, :, T_index]
+    q_dist_vs_T[:,T_index] /=  q_dist_vs_T[:,T_index].max()
+
+# %% Store processed data
+fname = f'Processed_Data/thermalization_tests_adjacency={adjacencies[adj_index]},size={sizes_vs_adj[adj_index][size_index]}'
+np.savez(fname,MCS_avg_vs_size=MCS_avg_vs_size, N_configs_vs_size=N_configs_vs_size, T_vs_size=T_vs_size,
+         error_q2_logarithmic_binning=error_q2_logarithmic_binning, error_std_q2_logarithmic_binning=error_std_q2_logarithmic_binning,
+         cluster_link_convergence=cluster_link_convergence,error_q2_vs_T=error_q2_vs_T, tau_q2_vs_T=tau_q2_vs_T, bins=bins,
+         q_dist_vs_T=q_dist_vs_T,  allow_pickle=True)
+
+#%% PROCESS DATA FOR FIGURES 2 AND 5 - g and dgdT
 pass
 # %%  Calculate pade fits of dgdT
 dg_dT_pade, T_c, peak_height = pf.pade_fss(sizes_vs_adj[adj_index], T_vs_size_best, dg_dT_vs_size_best,
@@ -207,7 +267,7 @@ Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap, \
                                                 dg_dT_bootstrap_vs_size_best, ic=ic_jc_vs_adj[adj_index][0],
                                                 jc=ic_jc_vs_adj[adj_index][1], ntr=10, maxfev=10000, threads=cpu_count())
 
-# %% Extrapolate previous values to thermodynamic limit for the mean field case (only fig. 3)
+# %% Extrapolate previous values to thermodynamic limit for the mean field case
 Tc_inf, Tc_inf_err, inv_peak_height_inf, inv_peak_height_inf_err, peak_width_inf, peak_width_inf_err =\
     pf.extrapolate_thermodynamic_limit_mean_field_graphs(adjacency, sizes, Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap)
 
@@ -234,7 +294,7 @@ np.savez(fname, Tc=Tc, Tc_err=Tc_err, inv_peak_height=inv_peak_height, inv_peak_
          inv_peak_height_inf_err=inv_peak_height_inf_err, peak_width_inf=peak_width_inf,
          peak_width_inf_err=peak_width_inf_err, allow_pickle=True)
 
-# %% PROCESS DATA FOR FIGURES 4 AND 6 - Tc vs adjacency
+#%% PROCESS DATA FOR FIGURES 4 AND 6 - Tc vs adjacency
 pass
 # %% Tc vs adjacency
 # graphs = 'mean_field'  # Fig. 4
@@ -286,9 +346,7 @@ for adj_index in adj_iterable:
         Tc_inf_vs_adj[adj_index], Tc_inf_err_vs_adj[adj_index]= \
             pf.extrapolate_thermodynamic_limit_mean_field_graphs(sizes_vs_adj[adj_index], Tc_bootstrap,
                                                                  inv_peak_height_bootstrap, peak_width_bootstrap)[:2]
-    # else:
-    #     Tc_inf_vs_adj[adj_index] = np.nan
-    #     Tc_inf_err_vs_adj[adj_index] = np.nan
+
 
     if write_file:
         for size_index in range(len(sizes)):
@@ -305,488 +363,97 @@ fname = f'Processed_Data/Tc_vs_adj_{graphs}_read_mode={MCS_N_config_condition}_m
 np.savez(fname,Tc_vs_adj=Tc_vs_adj, Tc_err_vs_adj=Tc_err_vs_adj, Tc_inf_vs_adj=Tc_inf_vs_adj,
          Tc_inf_err_vs_adj=Tc_inf_err_vs_adj,  allow_pickle=True)
 
-# %% BINNED DATA ONLY Plot Autocorrelation time and thermal average error of q2
-error_q2_T_vs_size = np.zeros([len(sizes), copies])
-tau_q2_T_vs_size = np.zeros([len(sizes), copies])
-
-for size_index, size in enumerate(sizes):
-    if size_index == 4:
-        continue
-    if size_index !=5:
-        continue
-    σ2_q2_bin_t = σ2_q2_bin_vs_size[size_index][-1]
-    MCS_avg = MCS_avg_vs_size[size_index][-1]
-
-    T_indices = np.linspace(T_index_0, copies - 1, σ2_q2_bin_t.shape[-1], dtype='int')
-    colors = plt.get_cmap('plasma')(np.linspace(0, 255, σ2_q2_bin_t.shape[-1]).astype('int'))
-
-    fig, (ax2, ax1) = plt.subplots(ncols=2, figsize=[10, 4], dpi=150)
-
-    for T_index in range(σ2_q2_bin_t.shape[-1]):
-        σ2_q2_bin_c = σ2_q2_bin_t.mean(0)[:, T_index]
-        # σ2_q2_bin_c = σ2_q2_bin_t[10,:,T_index]
-        M0 = MCS_avg
-        n_bins = σ2_q2_bin_c.shape[0]
-        bins = np.arange(n_bins)
-
-        # Remove the last three points
-        bins = bins
-        σ2_q2_bin_c = σ2_q2_bin_c
-        M_bin = [M0 / 2 ** bin for bin in bins]
-        error = np.array([np.sqrt((1 / M) * sigma) for M, sigma in zip(M_bin, σ2_q2_bin_c)])
-
-        M = 2 ** bins
-        tau = M * σ2_q2_bin_c[bins] / σ2_q2_bin_c[0]
-        tau_max_index = np.where(tau == tau.max())[0][0]
-        if np.abs(tau[tau_max_index]-tau[tau_max_index-1])/tau[tau_max_index] < 0.1:
-            tau_q2_T_vs_size[size_index, T_index] = tau.max()
-        else:
-            tau_q2_T_vs_size[size_index, T_index] = np.nan
-
-        # n_bin_bias = np.arange(n_bins - 1)
-        # M_bias = 2 ** n_bin_bias
-        # tau_bias = (4 * M_bias * σ2_q2_bin_c[n_bin_bias + 1] - M_bias * σ2_q2_bin_c[n_bin_bias]) / σ2_q2_bin_c[0]
-
-        if np.any(T_index == T_indices):
-            ax1.plot(2 ** bins, error, '.-', color=colors[np.where(T_index == T_indices)[0][0]])
-            ax2.plot(M, tau, '.-', color=colors[np.where(T_index == T_indices)[0][0]])
-            # ax3.plot(M_bias, tau_bias,'.-', color=colors[np.where(T_index == T_indices)[0][0]])
-
-    ax1.set_yscale('log')
-    ax1.set_xscale('log')
-    ax1.set_title(r'$\overline{\Delta_{q^2}}$')
-    ax1.set_xlabel(r'$M_n$')
-
-    ax2.set_xscale('log')
-    ax2.set_yscale('log')
-    ax2.set_title(r'$\overline{\tau_{q^2}}$')
-    ax2.set_xlabel(r'$M_n$')
-
-    figs.colorbar_for_lines(fig, T_vs_size[size_index][0][T_indices].round(2), label='$T$', location='top')
-
-    fig.suptitle(f'$n=$ {size}')
-    fig.tight_layout()
-    fig.show()
-
-# %% BINNED DATA ONLY - NEW VERSION - Plot Autocorrelation time and thermal average error of q2 -
-size_index = 5
-σ2_q2_bin_t = σ2_q2_bin_vs_size[size_index][-1]
-MCS_avg = MCS_avg_vs_size[size_index][-1]
-tau_q2_T_vs_configs = np.zeros_like(σ2_q2_bin_t)
-tau_q2_T_vs_configs_mode = np.zeros([σ2_q2_bin_t.shape[1],σ2_q2_bin_t.shape[2]])
-
-fig, ax2 = plt.subplots()
-
-for config_index in range(N_configs_vs_size[size_index][-1]):
-    for T_index in range(σ2_q2_bin_t.shape[-1]):
-        σ2_q2_bin_c = σ2_q2_bin_t[config_index, :, T_index]
-        n_bins = σ2_q2_bin_c.shape[0]
-        bins = np.arange(n_bins)
-        M = 2 ** bins
-        tau_q2_T_vs_configs[config_index,:,T_index] = M * σ2_q2_bin_c[bins] / σ2_q2_bin_c[0]
-
-for bin_index in range(σ2_q2_bin_t.shape[1]):
-    for T_index in range(σ2_q2_bin_t.shape[-1]):
-        # h, b = np.histogram(np.log10(tau_q2_T_vs_configs[:, bin_index, T_index]), 1000)
-        # b_x_index = np.where(h==h.max())[0][0]
-        # tau_q2_T_vs_configs_mode[bin_index,T_index] = 0.5*( b[b_x_index] + b[b_x_index+1])
-        mean = tau_q2_T_vs_configs[:, bin_index, T_index].mean()
-        std = tau_q2_T_vs_configs[:, bin_index, T_index].std()
-        # tau_q2_T_vs_configs[:, bin_index, T_index][tau_q2_T_vs_configs[:, bin_index, T_index]>mean+4*std] = np.nan
-
-for T_index in range(σ2_q2_bin_t.shape[-1]):
-    if np.any(T_index == T_indices):
-        ax2.plot(M, np.nanmean(tau_q2_T_vs_configs[:,:,T_index],0) , '.-', color=colors[np.where(T_index == T_indices)[0][0]])
-
-
-ax2.set_xscale('log')
-ax2.set_yscale('log')
-ax2.set_title(r'$\overline{\tau_{q^2}}$')
-ax2.set_xlabel(r'$M_n$')
-
-figs.colorbar_for_lines(fig, T_vs_size[size_index][0][T_indices].round(2), label='$T$', location='top')
-
-fig.suptitle(f'$n=$ {sizes[size_index]}')
-fig.tight_layout()
-fig.show()
-
-#%%
-T_index = -30
-fig, ax = plt.subplots()
-
-ax.hist(tau_q2_T_vs_configs[:,-4,T_index],100)
-fig.suptitle(f'T={T_vs_size[size_index][-1][T_index]}')
-# ax.set_xscale('log')
-# ax.set_yscale('log')
-fig.show()
-
-
-# %% BINNED DATA ONLY Read autocorrelation time data vs adjacency
+#%% PROCESS DATA FOR FIGURES 7, 8 AND 13 - Autocorrelation times
+pass
+# %% Read autocorrelation time data vs adjacency
+adj_indices = [0, 8, 9, 10]
 T_vs_adj = [[] for _ in range(len(adjacencies))]
-tau_q2_T_vs_adj = [[] for _ in range(len(adjacencies))]
 σ2_q2_bin_vs_adj = [[] for _ in range(len(adjacencies))]
-MCS_avg_vs_size = [[] for _ in range(len(adjacencies))]
-N_configs_vs_size = [[] for _ in range(len(adjacencies))]
-adj_indices = [0, 9, 10, 11]
-
+tau_q2_T_vs_adj = [[] for _ in range(len(adjacencies))]
 for adj_index in adj_indices:
-    MCS_avg_vs_size[adj_index], N_configs_vs_size[adj_index], _, _, T_vs_adj[adj_index], _, _, _, _, _, σ2_q2_bin_vs_adj[adj_index] = \
+    _, _, _, _, T_vs_adj[adj_index], _, _, _, _, _, σ2_q2_bin_vs_adj[adj_index] = \
         rfc.read_data(adjacencies[adj_index], distribution, sizes, add_vs_adj[adj_index], T0_Tf_vs_adj[adj_index][0],
-        T0_Tf_vs_adj[adj_index][1], MCS_avg_0, [max_MCSs_vs_adj_binned[adj_index][:-1], _, _], data_type='binned')[:11]
+        T0_Tf_vs_adj[adj_index][1], MCS_avg_0, [max_MCSs_vs_adj_binned[adj_index], _, _], data_type='binned')[:11]
 
-for adj_index in adj_indices:
-    del T_vs_adj[adj_index][4], σ2_q2_bin_vs_adj[adj_index][4], sizes_vs_adj[adj_index][4]
-del sizes[4]
-
-# %% BINNED DATA ONLY Calculate autocorrelation time
+# %% Calculate autocorrelation times
+T_for_tau_vs_size = np.linspace(0.5, 5, 500)
+start_range_vs_adj = [16, 21, 120, 160]
+end_range_vs_adj = [90, 250, 350, 490]
 
 for adj_index in adj_indices:
     tau_q2_T_vs_adj[adj_index] = rfc.autocorrelation_time_q2(σ2_q2_bin_vs_adj[adj_index])
 
-# %% BINNED DATA ONLY Calculate autocorrelation time fits
-T_fit_tau_vs_adj, log_tau_fit_vs_adj, log_tau_vs_adj, T_tau_vs_adj = [ [[[] for _ in range(len(sizes))] for _ in range(len(adjacencies))] for _ in range(4)]
-divide_by_size = True
+# Calculate autocorrelation time fits
+T_fit_tau_vs_adj, log_tau_fit_vs_adj, log_tau_vs_adj, log_tau_specific_fit_vs_adj, log_tau_specific_vs_adj, \
+    T_tau_vs_adj = [ [[[] for _ in range(len(sizes))] for _ in range(len(adj_indices))] for _ in range(6)]
 
-for adj_index in adj_indices:
+for adj_iterable, adj_index in enumerate(adj_indices):
     for size_index in range(len(sizes)):
         fit_start_index = np.where(np.isfinite(tau_q2_T_vs_adj[adj_index][size_index]))[0][0]
 
         T = T_vs_adj[adj_index][size_index][-1][fit_start_index:]
-        T_tau_vs_adj[adj_index][size_index] = T
+        T_tau_vs_adj[adj_iterable][size_index] = T
+        T_fit_tau_vs_adj[adj_iterable][size_index] = np.linspace(T[0], T[-1], 1000)
 
-        if divide_by_size:
-            tau = tau_q2_T_vs_adj[adj_index][size_index][fit_start_index:]/sizes_vs_adj[adj_index][size_index]
-        else:
-            tau = tau_q2_T_vs_adj[adj_index][size_index][fit_start_index:]
+        tau_specific = tau_q2_T_vs_adj[adj_index][size_index][fit_start_index:]/sizes_vs_adj[adj_index][size_index]
+        tau = tau_q2_T_vs_adj[adj_index][size_index][fit_start_index:]
 
-        log_tau_vs_adj[adj_index][size_index] = np.log(tau)
+        log_tau_specific_vs_adj[adj_iterable][size_index] = np.log(tau_specific)
+        log_tau_vs_adj[adj_iterable][size_index] = np.log(tau)
 
-        T_fit_tau_vs_adj[adj_index][size_index] = np.linspace(T[0], T[-1], 1000)
-        log_tau_fit_vs_adj[adj_index][size_index] = np.poly1d(np.polyfit(T, log_tau_vs_adj[adj_index][size_index], 10))(T_fit_tau_vs_adj[adj_index][size_index])
+        log_tau_specific_fit_vs_adj[adj_iterable][size_index] = np.poly1d(np.polyfit(T, log_tau_specific_vs_adj[adj_iterable][size_index], 10))(T_fit_tau_vs_adj[adj_iterable][size_index])
+        log_tau_fit_vs_adj[adj_iterable][size_index] = np.poly1d(np.polyfit(T, log_tau_vs_adj[adj_iterable][size_index], 10))(T_fit_tau_vs_adj[adj_iterable][size_index])
 
-# %% BINNED DATA ONLY Plot autocorrelation time
-adjacency_names = ['$(a)$', '$(b)$', '$(c)$', '$(d)$']
-fig, ax = plt.subplots(ncols=4, figsize=[4*4*0.7, 4*1.2])
-# ax = ax.ravel()
-if len(adj_indices) == 1:
-    fig, ax = plt.subplots()
-    ax = [ax]
-for i, adj_index in enumerate(adj_indices):
-    for size_index in range(len(sizes)):
-        if i==3 and size_index == 0:
-            continue
-        ax[i].plot(T_tau_vs_adj[adj_index][size_index][:-3], log_tau_vs_adj[adj_index][size_index][:-3],
-                   color=color_vs_size[size_index], marker=marker_vs_adjacency[adj_index], linewidth=0, markersize=3, label=f'$N={sizes_vs_adj[adj_index][size_index]}$')
-        ax[i].plot(T_fit_tau_vs_adj[adj_index][size_index][:-100], log_tau_fit_vs_adj[adj_index][size_index][:-100], color=color_vs_size[size_index], linewidth=0.5)
 
-    ax[i].set_title(f'{adjacency_names[i]}', y=-.4)
-    # ax[i].xaxis.set_label_coords(0.5, -0.05)
-    # ax[i].xaxis.set_label_coords(1,-0.05)
-    ax[i].set_xlabel('$T$')
-    ax[i].set_ylim(-7, 2)
-    ax[i].set_xlim(0,4.5)
-    ax[i].set_xticks([0,1,2,3,4])
-    if i > 0:
-        ax[i].set_yticks([])
-    ax[i].legend(fontsize=12)
-    # ax[i].set_box_aspect(.8)
+# Define scaling laws for tau(T) vs N
+def power_scaling(x, a, c):
+    return a*x + c
+def exp_scaling(x, a, b, c):
+    return a*x + b*np.exp(x) + c
 
-    # if divide_by_size:
-    #     # ax[i].set_ylim([-7, 1])
-    #     # ax[i].set_xlim([0.65, 1.3])
-    #     ax[i].set_xlim([0, 5])
-    #
-    # else:
-    #     # ax[i].set_ylim([-0.1, 3.5])
-    #     # ax[i].set_xlim([0.65, 1.3])
-    #     ax[i].set_xlim([0, 5])
+# Calculate autocorrelation time vs size for different temperatures, extract fit parameters
+log_tau_vs_size_for_specific_T_vs_adj = [[[] for _ in range(len(T_for_tau_vs_size))] for _ in range(len(adj_indices))]
+power_scaling_params_log_tau_vs_size_for_specific_T_vs_adj = [[[] for _ in range(len(T_for_tau_vs_size))] for _ in
+                                                              range(len(adj_indices))]
+exp_scaling_params_log_tau_vs_size_for_specific_T_vs_adj = [[[] for _ in range(len(T_for_tau_vs_size))] for _ in
+                                                            range(len(adj_indices))]
+sizes_fit_specific_T_vs_adj = [[[] for _ in range(len(T_for_tau_vs_size))] for _ in range(len(adj_indices))]
 
-    if divide_by_size:
-        # ax[0].set_ylabel(r'$\log(\overline{\tau_{q^2}}/N)$')
-        fig.suptitle(r'$\log(\overline{\tau_{q^2}}/N)$', y=0.92)
-    else:
-        ax[0].set_ylabel(r'$\log(\overline{\tau_{q^2}})$')
-fig.tight_layout()
-figs.export('Autocorrelation times by N for rrg3 chimera pegasus zephyr.pdf')
-fig.show()
-
-# %% BINNED DATA ONLY Calculate autocorrelation time vs size for different temperatures
-Ts = np.linspace(0.5, 5, 500)
-# Ts = np.linspace(0.65, 1.3, 100)
-log_tau_vs_size_for_specific_T_vs_adj = [[[] for _ in range(len(Ts))] for _ in range(len(adjacencies))]
-
-for adj_index in adj_indices:
-    for size_index in range(len(sizes)):
-        for T_fit_index, T in enumerate(Ts):
-            if np.any(np.abs(T_fit_tau_vs_adj[adj_index][size_index]-T) < 0.1):
-                T_index = np.where(np.abs(T_fit_tau_vs_adj[adj_index][size_index]-T) == np.abs(T_fit_tau_vs_adj[adj_index][size_index]-T).min())[0][0]
-                log_tau_vs_size_for_specific_T_vs_adj[adj_index][T_fit_index].append(log_tau_fit_vs_adj[adj_index][size_index][T_index])
+for adj_iterable, adj_index in enumerate(adj_indices):
+    for T_fit_index, T in enumerate(T_for_tau_vs_size):
+        for size_index in range(len(sizes)):
+            if np.any(np.abs(T_fit_tau_vs_adj[adj_iterable][size_index]-T) < 0.1):
+                T_index = np.where(np.abs(T_fit_tau_vs_adj[adj_iterable][size_index]-T) == np.abs(T_fit_tau_vs_adj[adj_iterable][size_index]-T).min())[0][0]
+                log_tau_vs_size_for_specific_T_vs_adj[adj_iterable][T_fit_index].append(log_tau_fit_vs_adj[adj_iterable][size_index][T_index])
             else:
-                log_tau_vs_size_for_specific_T_vs_adj[adj_index][T_fit_index].append(np.nan)
+                log_tau_vs_size_for_specific_T_vs_adj[adj_iterable][T_fit_index].append(np.nan)
+        log_tau_vs_size = log_tau_vs_size_for_specific_T_vs_adj[adj_iterable][T_fit_index]
 
-# %% Define scaling law for tau(T) vs N
-def scaling_law_manuel(x, a, b, c):
-     # scaling law for log(tau) = f(log(N))
-     # This corresponds to tau = c * N^a * e^(bN)
-    # return a*x*0 + b*np.exp(x) + c*0
-    return a*x + b*np.exp(x)*0 + c
-
-def scaling_law(x, a, b, c):
-    return a*x*0 + b*np.exp(x) + c*0
-
-# %% BINNED DATA ONLY Plot autocorrelation time vs size for different temperatures
-fit_params_log_tau_vs_size_for_specific_T_vs_adj = [[[] for _ in range(len(Ts))] for _ in range(len(adjacencies))]
-
-colors_autocorrelation = plt.get_cmap('plasma')(np.linspace(0, 255, len(Ts)).astype('int'))
-fig, ax = plt.subplots(ncols=len(adj_indices), figsize=[26, 6])
-if len(adj_indices) == 1:
-    fig, ax = plt.subplots()
-    ax = [ax]
-
-for i, adj_index in enumerate(adj_indices):
-    for T_fit_index, T in enumerate(Ts):
-
-        log_tau_vs_size = log_tau_vs_size_for_specific_T_vs_adj[adj_index][T_fit_index]
-        # Print in log log
-        ax[i].plot(np.log(sizes_vs_adj[adj_index]), log_tau_vs_size, color=colors_autocorrelation[T_fit_index], linewidth=0, marker=marker_vs_adjacency[adj_index], markersize=3)
-        # Print in linear
-        # ax[i].plot(sizes_vs_adj[adj_index], np.exp(log_tau_vs_size), color=colors_autocorrelation[T_fit_index], linewidth=0, marker=marker_vs_adjacency[adj_index], markersize=3)
         try:
             non_thermalized_index = np.where(~np.isnan(log_tau_vs_size))[0][-1]
-
-            # log(tau) = A + B*log(N)
-            # params = np.polyfit(np.log(sizes_vs_adj[adj_index][:non_thermalized_index+1]), log_tau_vs_size[:non_thermalized_index+1], 1)
-            # N0 = np.log(sizes_vs_adj[adj_index][:non_thermalized_index+1])[0]
-            # Nf = np.log(sizes_vs_adj[adj_index][:non_thermalized_index+1])[-1]
-            # sizes_fit = np.linspace(N0, Nf, 100)
-            # ax[i].plot(sizes_fit, np.poly1d(params)(sizes_fit), color=colors_autocorrelation[T_fit_index], linewidth=1)
-
-            # scaling law manuel
-            # params = curve_fit(scaling_law_manuel, np.log(sizes_vs_adj[adj_index][:non_thermalized_index+1]), log_tau_vs_size[:non_thermalized_index+1] ,bounds=([0,-np.inf,0],[np.inf,np.inf,np.inf]))[0]
-            params = curve_fit(scaling_law_manuel, np.log(sizes_vs_adj[adj_index][:non_thermalized_index+1]), log_tau_vs_size[:non_thermalized_index+1])[0]
-            N0 = np.log(sizes_vs_adj[adj_index][:non_thermalized_index+1])[0]
-            Nf = np.log(sizes_vs_adj[adj_index][:non_thermalized_index+1])[-1]
-            sizes_fit = np.linspace(N0, Nf, 100)
-            ax[i].plot(sizes_fit, scaling_law_manuel(sizes_fit, *params), color=colors_autocorrelation[T_fit_index], linewidth=1)
-
-            #
-            # params = curve_fit(scaling_law, sizes_vs_adj[adj_index][:non_thermalized_index+1], np.exp(log_tau_vs_size[:non_thermalized_index+1]))[0]
-            # N0 = sizes_vs_adj[adj_index][:non_thermalized_index+1][0]
-            # Nf = sizes_vs_adj[adj_index][:non_thermalized_index+1][-1]
-            # sizes_fit = np.linspace(N0, Nf, 100)
-            # ax[i].plot(np.log(sizes_fit), np.log(scaling_law(sizes_fit, *params)), color=colors_autocorrelation[T_fit_index], linewidth=1)
-
-            fit_params_log_tau_vs_size_for_specific_T_vs_adj[adj_index][T_fit_index] = params.copy()
+            power_scaling_params_log_tau_vs_size_for_specific_T_vs_adj[adj_iterable][T_fit_index] = \
+                curve_fit(power_scaling, np.log(sizes_vs_adj[adj_index][:non_thermalized_index+1]), log_tau_vs_size[:non_thermalized_index+1])[0]
+            exp_scaling_params_log_tau_vs_size_for_specific_T_vs_adj[adj_iterable][T_fit_index] = \
+                curve_fit(exp_scaling, np.log(sizes_vs_adj[adj_index][:non_thermalized_index+1]), log_tau_vs_size[:non_thermalized_index+1])[0]
         except:
-            fit_params_log_tau_vs_size_for_specific_T_vs_adj[adj_index][T_fit_index] = np.zeros([len(fit_params_log_tau_vs_size_for_specific_T_vs_adj[adj_index][T_fit_index-1])])
+            power_scaling_params_log_tau_vs_size_for_specific_T_vs_adj[adj_iterable][T_fit_index] = \
+                np.zeros([len(power_scaling_params_log_tau_vs_size_for_specific_T_vs_adj[adj_iterable][T_fit_index-1])])
+            exp_scaling_params_log_tau_vs_size_for_specific_T_vs_adj[adj_iterable][T_fit_index] = \
+                np.zeros([len(exp_scaling_params_log_tau_vs_size_for_specific_T_vs_adj[adj_iterable][T_fit_index-1])])
 
-    ax[i].set_title(adjacencies[adj_index])
-    ax[i].set_xlabel(r'$\log(N)$')
-    # ax[i].set_yscale('log', base=10)
-    # ax[i].set_ylim([-0.1, 3.5])
-    # ax[i]. set_xlim([4e1,2e3])
-    # ax[i].set_xscale('log', base=10)
+power_scaling_params_log_tau_vs_size_for_specific_T_vs_adj = np.array(power_scaling_params_log_tau_vs_size_for_specific_T_vs_adj)
+exp_scaling_params_log_tau_vs_size_for_specific_T_vs_adj  = np.array(exp_scaling_params_log_tau_vs_size_for_specific_T_vs_adj)
+# %% Store processed data
+fname = f'Processed_Data/Autocorrelation_times_adjacencies={adj_indices}'
+np.savez(fname, T_tau_vs_adj=T_tau_vs_adj, T_fit_tau_vs_adj=T_fit_tau_vs_adj,
+         log_tau_vs_adj=log_tau_vs_adj, log_tau_fit_vs_adj=log_tau_fit_vs_adj,
+         log_tau_specific_vs_adj=log_tau_specific_vs_adj, log_tau_specific_fit_vs_adj=log_tau_specific_fit_vs_adj,
+         T_for_tau_vs_size=T_for_tau_vs_size, log_tau_vs_size_for_specific_T_vs_adj=log_tau_vs_size_for_specific_T_vs_adj,
+         power_scaling_params_log_tau_vs_size_for_specific_T_vs_adj = power_scaling_params_log_tau_vs_size_for_specific_T_vs_adj,
+         exp_scaling_params_log_tau_vs_size_for_specific_T_vs_adj=exp_scaling_params_log_tau_vs_size_for_specific_T_vs_adj,
+         start_range_vs_adj=start_range_vs_adj, end_range_vs_adj=end_range_vs_adj, allow_pickle=True)
 
-if divide_by_size:
-    ax[0].set_ylabel(r'$\log(\tau/N)$')
-else:
-    ax[0].set_ylabel(r'$\log(\tau)$')
-# fig.suptitle(f'$\\alpha={alpha}$')
-figs.colorbar_for_lines(fig, Ts[::2].round(1))
-fig.show()
-
-# %% BINNED DATA ONLY Plot fit params of autocorrelation time vs size
-start_range_vs_adj=[16,21,59,65]
-end_range_vs_adj=[90,250,350,490]
-
-fig, ax = plt.subplots()
-
-for i, adj_index in enumerate(adj_indices):
-    params = np.array(fit_params_log_tau_vs_size_for_specific_T_vs_adj[adj_index])
-    params[params == 0] = np.nan
-    ax.plot(Ts[start_range_vs_adj[i]:end_range_vs_adj[i]], np.exp(params[:, 0])[start_range_vs_adj[i]:end_range_vs_adj[i]], color=color_vs_size[adj_index],  label=f'{adjacencies[adj_index]}')
-    # ax.plot(Ts, params[:, 1], marker=marker_vs_adjacency[adj_index], markersize=4, linewidth=1, color='r', label=f'B(T), {adjacencies[adj_index]}')
-    # ax.plot(Ts[start_range_vs_adj[i]:end_range_vs_adj[i]], 1/np.exp(params[:, 2])[start_range_vs_adj[i]:end_range_vs_adj[i]], color=color_vs_size[adj_index],  label=f'{adjacencies[adj_index]}')
-    # ax.plot(Ts, 10**(params[:, 1]), marker = marker_vs_adjacency[adj_index])
-
-ax.legend(fontsize=8, ncols=2)
-# fig.suptitle(r'$ \tau(N) \propto C(T)N^{A(T)}e^{B(T)N}$')
-fig.suptitle(r'$ \overline{\tau_{q^2}}(N,T) \propto N^{A(T)}$')
-# ax.set_yscale('log')
-# ax.set_xscale('log')
-ax.set_ylabel(r'$A(T)$')
-ax.set_xlabel(r'$T$')
-figs.export('power scaling autocorrelation time.pdf')
-fig.show()
-
-# %% You need Tc(N) vs adj to run the cell below, (run the cell called Tc vs adjacency) also, u must delete data for 1200 because there we dont have binned data.
-
-for i, T_max in enumerate(T_max_vs_adj):
-    try:
-        T_max_vs_adj[i] = np.delete(T_max,4)
-    except:
-        continue
-# %% BINNED DATA ONLY Plot collapse of autocorrelation time
-nu = -0.3
-sizes = [100, 200, 400, 800, 1600]
-fig, ax = plt.subplots(ncols=3, figsize=[20, 6])
-for i, adj_index in enumerate(adj_indices):
-    for size_index in range(len(sizes)):
-        ax[i].plot((T_tau_vs_adj[adj_index][size_index]-T_max_vs_adj[adj_index][size_index])*np.array(sizes_vs_adj[adj_index][size_index])**nu,
-                   10**np.array(log_tau_vs_adj[adj_index][size_index]), color=color_vs_size[size_index], marker=marker_vs_adjacency[adj_index], linewidth=0, markersize=3)
-
-    ax[i].set_title(adjacencies[adj_index])
-    ax[i].set_xlabel('$T$')
-    ax[i].set_yscale('log')
-
-    # if divide_by_size:
-    #     ax[i].set_ylim([-3.5, 1])
-    #     ax[i].set_xlim([0, 5])
-    # else:
-    #     ax[i].set_ylim([-0.1, 3.5])
-    #     ax[i].set_xlim([0, 5])
-
-if divide_by_size:
-    ax[0].set_ylabel(r'$\log(\tau/N)$')
-else:
-    ax[0].set_ylabel(r'$\log(\tau)$')
-fig.show()
-
-# %% BINNED DATA ONLY Plot q_dist
-MCS_index = -1
-dist = np.linspace(-1, 1, n_q_dist)
-replica_index = 18
-size_index = -1
-
-fig1, ax1 = plt.subplots(ncols=1, figsize=[6, 4], dpi=150)
-q_dist = q_dist_vs_size[size_index][MCS_index]
-for T_index in range(copies):
-    q_dist_T = q_dist[replica_index, :, T_index]
-    q_dist_T = q_dist_T / q_dist_T.max()
-    if np.any(T_index == T_indices):
-        ax1.plot(dist, q_dist_T, '.-', color=colors[np.where(T_index == T_indices)[0][0]])
-ax1.set_title(r'$P(q)$')
-ax1.set_xlabel(r'$q$')
-figs.colorbar_for_lines(fig1, T_vs_size[size_index][0][T_indices].round(2))
-fig1.tight_layout()
-fig1.show()
-
-# %% BINNED DATA ONLY Plot skewness of q_dist vs temperature for diferent sizes
-dist = np.linspace(-1, 1, n_q_dist)
-
-fig2, ax2 = plt.subplots(ncols=1, figsize=[6, 4], dpi=150)
-
-for size_index in range(len(sizes)):
-    print(sizes[size_index])
-    MCS_index = len(MCS_avg_vs_size[size_index]) - 1
-    q_dist = q_dist_vs_size[size_index][MCS_index]
-    n_replicas = q_dist.shape[0]
-    skewness = np.zeros([copies, n_replicas])
-
-    for T_index in range(copies):
-        for replica_index in range(n_replicas):
-            q_dist_T = q_dist[replica_index, :, T_index]
-            # skewness[T_index, replica_index] = sps.skew(np.repeat(dist, q_dist_T.astype('int')))
-            skewness[T_index, replica_index] = rfc.skewness_of_histogram(q_dist_T, dist)
-
-    ax2.plot(T_vs_size[size_index][0], np.abs(skewness).mean(1), '.-', label=f'$N=${sizes[size_index]}')
-    # ax2.plot(T_vs_size[size_index][0], skewness, '.-', label=f'$N=${sizes[size_index]}')
-
-ax2.set_yscale('linear')
-# ax2.set_yscale('log')
-ax2.legend()
-ax2.set_xticks(T_vs_size[size_index][0][T_indices].round(1))
-ax2.set_title(r'$\overline{\widetilde{\mu_3}(q)}$')
-ax2.set_xlabel(r'$T$')
-ax2.set_xlim([T_vs_size[size_index][0][T_index_0], Tf])
-fig2.tight_layout()
-fig2.show()
-
-# %% BINNED DATA ONLY Plot skewness of q_dist vs MCS_avg for one size and diferent temperatures
-dist = np.linspace(-1, 1, n_q_dist)
-size_index = -2
-
-n_replicas = N_configs_vs_size[size_index][-1]
-skewness = np.zeros([len(MCS_avg_vs_size[size_index]), copies, n_replicas])
-
-fig, ax = plt.subplots()
-for T_index in range(copies):
-    for MCS_index in range(len(MCS_avg_vs_size[size_index]) - 1):
-        q_dist = q_dist_vs_size[size_index][MCS_index]
-        for replica_index in range(n_replicas):
-            q_dist_T = q_dist[replica_index, :, T_index]
-            skewness[T_index, replica_index] = sps.skew(np.repeat(dist, q_dist_T.astype('int')))
-            # skewness[MCS_index, T_index, replica_index] = rfc.skewness_of_histogram(q_dist_T, dist)
-
-    if np.any(T_index == T_indices):
-        ax.plot(MCS_avg_vs_size[size_index], np.abs(skewness).mean(2)[:, T_index], '.-',
-                color=colors[np.where(T_index == T_indices)[0][0]])
-
-ax.set_yscale('linear')
-ax.set_xscale('log')
-ax.legend()
-# ax.set_xticks(T_vs_size[size_index][0][T_indices].round(1))
-# ax.set_title(r'$\overline{\widetilde{\mu_3}(q)}$')
-# ax.set_xlabel(r'$T$')
-# ax.set_xlim([T_vs_size[size_index][0][T_index_0], Tf])
-fig.tight_layout()
-fig.show()
-
-# %% BINNED DATA ONLY Convergence of q2 vs MCS_avg
-fig, ax = plt.subplots(dpi=200)
-size_idx = 4
-n_conf = len(labels_vs_size[size_idx][0])
-n_MCS = len(MCS_avg_vs_size[size_idx])
-
-error_N = np.zeros([n_conf, n_MCS - 1, copies])
-for k, label in enumerate(labels_vs_size[size_idx][0]):
-    for i in reversed(range(n_MCS)):
-        index = np.where(labels_vs_size[size_idx][i] == label)[0][0]
-        if i == n_MCS - 1:
-            q2_converged = q2_vs_size[size_idx][i][index]
-        else:
-            error_N[k, i] = q2_converged - q2_vs_size[size_idx][i][index]
-
-fig, ax = plt.subplots(dpi=200)
-x = MCS_avg_0 * 2 ** np.arange(n_MCS - 1)
-for T_index in T_indices:
-    ax.errorbar(np.arange(n_MCS - 1), error_N.mean(0)[::-1, T_index],
-                yerr=error_N.std(0)[::-1, T_index] / np.sqrt(n_conf),
-                color=colors[np.where(T_index == T_indices)[0][0]], linewidth=1)
-    # ax.plot(np.arange(n_MCS-1), error_N.mean(0)[::-1, T_index],
-    #             color=colors[np.where(T_index == T_indices)[0][0]], linewidth=1)
-
-# ax.set_yscale('log')
-# ax.set_xscale('log')
-ax.set_ylabel(r'$\delta \: q^2_n$')
-figs.colorbar_for_lines(fig, T_vs_size[-1][0][T_indices].round(2), label='$T$', location='top')
-fig.suptitle(f'$n=$ {sizes[size_idx]}')
-fig.tight_layout()
-fig.show()
-
-# %% BINNED DATA ONLY Convergence criteria using cluster link overlap
-for size_index in range(len(sizes)):
-    fig, ax = plt.subplots(dpi=200)
-    T = T_vs_size[size_index][0]
-    n_MCS = len(MCS_avg_vs_size[size_index])
-
-    cluster_link_convergence = np.zeros([n_MCS, copies])
-    for MCS_index in range(n_MCS):
-        U = U_vs_size[size_index][MCS_index].mean(0)
-        ql = ql_vs_size[size_index][MCS_index].mean(0)
-        cluster_link_convergence[MCS_index] = 1 - T * np.abs(U) / 1.5 - ql
-
-    fig, ax = plt.subplots(dpi=200)
-    for T_index in T_indices:
-        ax.plot(np.arange(n_MCS), cluster_link_convergence[::-1, T_index], '.-',
-                color=colors[np.where(T_index == T_indices)[0][0]], linewidth=1)
-
-    figs.colorbar_for_lines(fig, T[T_indices].round(2), label='$T$', location='top')
-
-    ax.set_title(fr'n={sizes[size_index]} \\ \\ $1-T|U|/c -q_l$')
-    fig.tight_layout()
-    fig.show()
-
+#%% Create optimal temperature distribution for parallel tempering
 # %% Calculate Cv
 CvT_vs_size = []
 for MCS_index, size in enumerate(sizes):
