@@ -65,8 +65,6 @@ class fit_pade:
     Input;
     n,m ---> orders of the Padé
     """
-
-    #
     def __init__(self, n, m):
         self.n = n
         self.m = m
@@ -84,18 +82,6 @@ class fit_pade:
         b = para[self.n:]
         y = sum(a[i] * x ** i for i in range(len(a))) / (1 + sum(b[i] * x ** i for i in range(len(b))))
 
-        # force the func to have <0 derivative at x=0
-        # if a[1]*(1+b[0])- a[0]*b[1]>0:
-        #     a0 = a[1]*(1+b[0])/b[1]
-        #     y = (a0 + sum(a[i] * x ** i for i in range(1,len(a)))) / (1 + sum(b[i] * x ** i for i in range(len(b))))
-        # else:
-        #     y = sum(a[i] * x ** i for i in range(len(a))) / (1 + sum(b[i] * x ** i for i in range(len(b))))
-
-        # force the func to have 0 derivative at x=0
-        # a0 = a[1] * (1 + b[0]) / b[1]
-        # a1 = a0 * b[1] / (1 + b[0])
-        # y = (a0 + a1 * x + sum(a[i] * x ** i for i in range(2, len(a)))) / ( 1 + sum(b[i] * x ** i for i in range(len(b))))
-
         return y
 
     #
@@ -109,18 +95,6 @@ class fit_pade:
         a = para[0:self.n]
         b = para[self.n:]
         func = lambda x: sum(a[i] * x ** i for i in range(len(a))) / (1 + sum(b[i] * x ** i for i in range(len(b))))
-
-        # force the func to have <0 derivative at x=0
-        # if a[1]*(1+b[0])- a[0]*b[1]>0:
-        #     a0 = a[1] * (1 + b[0]) / b[1]
-        #     func = lambda x: (a0 + sum(a[i] * x ** i for i in range(1, len(a)))) / ( 1 + sum(b[i] * x ** i for i in range(len(b))))
-        # else:
-        #     func = lambda x: sum(a[i] * x ** i for i in range(len(a))) / (1 + sum(b[i] * x ** i for i in range(len(b))))
-
-        # force the func to have 0 derivative at x=0 and go through 1 at x=0
-        # a0 = 1 + b[0]
-        # a1 = a0 * b[1] / (1 + b[0])
-        # func = lambda x: (a0 + a1*x + sum(a[i] * x ** i for i in range(2, len(a)))) / ( 1 + sum(b[i] * x ** i for i in range(len(b))))
         return func
 
     def fitea_p(self, x, y, y_err, igu, verbose=False, maxfev=5000000, add_0=False):
@@ -213,8 +187,6 @@ class fit_pade:
 
 # from scipy.special import gamma, factorial
 class fitea_order_man:
-    #
-    #
     def __init__(self, nrho, ns, nb):
         self.nrho = nrho
         self.ns = ns
@@ -287,61 +259,6 @@ class fitea_order_man:
                 print(popt[i], "+-", perr[i])
         return popt, perr, chisq, res
 
-    def give_c(self, x, *para):
-        a = para[0:self.ns]
-        d = para[self.ns:self.ns + self.nrho]
-        b = para[self.ns + self.nrho: self.ns + self.nrho + self.nb]
-        nu = para[self.ns + self.nrho + self.nb]
-        wc = para[self.ns + self.nrho + self.nb + 1]
-        #         print(a,d,nu,wc)
-        rho = (x[0] - wc) + sum(d[i] * (x[0] - wc) ** (i + 2) for i in range(self.nrho))
-        xs = rho * x[1] ** (1 / nu)
-        beta = sum(b[i] * (x[0] - wc) ** (i) for i in range(self.nb))
-        if self.nb == 0:
-            f = 0
-        elif self.nb > 0:
-            #             y = para[-1]
-            f = x[1] ** -1 * sum(a[i] * xs ** i for i in range(self.ns)) * (1 + beta * x[1] ** (-yi))
-        return f, nu, wc
-
-    def sc_function(self, *para):
-        if self.nrho > 0:
-            print("WARNING: the scaling function also dependes on W-W_c!")
-        a = para[0:self.ns]
-        #         print(a,d,nu,wc)
-        f = lambda x: sum(a[i] * x ** i for i in range(self.ns))
-        return f
-
-    def give_scalingv(self, x, *para):
-        a = para[0:self.ns]
-        d = para[self.ns:self.ns + self.nrho]
-        b = para[self.ns + self.nrho: self.ns + self.nrho + self.nb]
-        nu = para[self.ns + self.nrho + self.nb]
-        wc = para[self.ns + self.nrho + self.nb + 1]
-        #         print(a,d,nu,wc)
-        rho = (x - wc) + sum(d[i] * (x - wc) ** (i + 2) for i in range(self.nrho))
-        return rho
-
-
-def separa(x, s, y, y_e):
-    xp = []
-    sp = []
-    yp = []
-    yp_e = []
-    nc = 0
-    for i in range(len(x) - 1):
-        if x[i] > x[i + 1]:
-            xp.append(x[nc:i + 1])
-            yp.append(y[nc:i + 1])
-            yp_e.append(y_e[nc:i + 1])
-            sp.append(s[nc:i + 1])
-            nc = i + 1
-    xp.append(x[nc:])
-    yp.append(y[nc:])
-    sp.append(s[nc:])
-    yp_e.append(y_e[nc:])
-    return xp, sp, yp, yp_e
-
 
 # def pade_best(x, y, y_err, ntr=100, ic=[4, 5], jc=[2, 3], verbose=True, maxfev=500000):
 def pade_best(x, y, y_err, ntr=10, ic=[4, 5], jc=[2, 3], verbose=True, maxfev=10000, add_0=False):
@@ -366,23 +283,15 @@ def pade_best(x, y, y_err, ntr=10, ic=[4, 5], jc=[2, 3], verbose=True, maxfev=10
         dfpade.append(df)
     st_chi = np.array(st_chi)
     if type(x) == list:
-        # inopt = [closer_to_one_but_below(st_chi[:, i]) for i in range(len(x))] # choose the pade with st_chi closer to 1 but <= 1
         inopt = [(np.abs(np.array(st_chi[:, i])-1)).argmin() for i in range(len(x))] # choose the pade with st_chi closer to 1
-        # inopt = [(np.array(st_chi[:, i])).argmin() for i in range(len(x))] # choose the pade with st_chi closer to 0
-        # inopt = [((st_chi-1)**2).sum(1).argmin()]*len(x) # choose one pade for all sizes, the pade that is in average closer to one for all the lines
-        # print(((st_chi-1)**2).sum(1))
         fpade_out = [fpade[inopt[i]][i] for i in range(len(x))]
         dfpade_out = [dfpade[inopt[i]][i] for i in range(len(x))]
-        # ppade_out = [ppade[inopt[i]][i] for i in range(len(x))]
         if verbose:
             print([st_chi[inopt[i], i] for i in range(len(x))])
     else:
-        # inopt = closer_to_one_but_below(st_chi)
         inopt = (np.abs(np.array(st_chi)-1)).argmin()
-        # inopt = ((st_chi-1)**2).sum(1).argmin()
         fpade_out = fpade[inopt]
         dfpade_out = dfpade[inopt]
-        # ppade_out = ppade[inopt]
         if verbose:
             print("best rchi", st_chi[inopt])
 
@@ -407,23 +316,6 @@ def pade_best_specific_ic_jc(x_vs_size, y_vs_size, y_err_vs_size, ntr, ic_vs_siz
 
     return fpade, dfpade, st_chi, None
 
-
-def closer_to_one_but_below(st_chi):
-    inopt = np.nan
-    chi_0 = 10
-    for i, chi in enumerate(st_chi):
-        if np.abs(chi - 1) <= np.abs(chi_0 - 1) and chi < 1:
-            inopt = i
-            chi_0 = chi
-    return inopt
-
-
-def pade_best_fast(x, y, y_err, ic=[5], jc=[6], ntr=10, maxfev=10000):
-    A = fit_pade(ic[0], jc[0])
-    pade, _, _ = A.sev_func_pade(x[:], y[:], y_err[:], ntr=ntr, verbose=False, maxfev=maxfev)
-    # df = [A.der_pade(pade_c[i]) for i in range(len(pade_c))]
-
-    return pade
 
 def pade_best_fast_different_ic_jc_each(x, y, y_err, ic=[5], jc=[6], ntr=10, maxfev=10000):
     pades = []
@@ -495,6 +387,7 @@ def estimate_peak_width(sizes, T0, Tf, dg_dT_pade, Tc, peak_height):
     peak_width_bootstrap = width_R - width_L
     return peak_width_bootstrap
 
+# %%
 def estimate_Tc_with_pade_bootstrap(sizes, T_vs_size_best, error_dg_dT_vs_size_best, dg_dT_bootstrap_vs_size_best, ic=[5], jc=[6],
                                     ntr=10, maxfev=10000):
 
@@ -523,7 +416,7 @@ def estimate_Tc_with_pade_bootstrap(sizes, T_vs_size_best, error_dg_dT_vs_size_b
 
     return Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap
 
-
+# %%
 def estimate_Tc_with_pade_bootstrap_parallel(sizes, T_vs_size, error_vs_size, dg_dT_bootstrap_vs_size, ic=[5], jc=[6],
                                              ntr=10, maxfev=10000, threads=8):
     n_bootstrap = len(dg_dT_bootstrap_vs_size[0])

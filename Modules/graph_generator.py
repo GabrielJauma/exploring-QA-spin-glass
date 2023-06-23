@@ -5,13 +5,6 @@ import networkx as nx
 
 
 def connectivity_matrix(size, adjacency, distribution, rng=np.random.default_rng(), trim=0, add=0, sparse=True, periodic=True, bonds='diagonal'):
-    # if adjacency == 'chimera':
-    #     size = size ** 2 * 8
-    # elif adjacency == 'pegasus':
-    #     size = 24 * size * (size - 1) - 8 * (size - 1)
-    # elif adjacency[:9] == 'hexagonal':
-    #     size = size ** 2 * 2
-
     # Adjacency
     if adjacency == 'SK':
         A = np.ones([size, size])
