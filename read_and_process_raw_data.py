@@ -270,7 +270,7 @@ Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap, \
 
 # %% Extrapolate previous values to thermodynamic limit for the mean field case
 Tc_inf, Tc_inf_err, inv_peak_height_inf, inv_peak_height_inf_err, peak_width_inf, peak_width_inf_err =\
-    pf.extrapolate_thermodynamic_limit_mean_field_graphs(adjacency, sizes, Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap)
+    pf.extrapolate_thermodynamic_limit_mean_field_graphs(sizes, Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap)
 
 # %% Histogram of bootstrap variables to check that they are gaussian like
 fig, ax = plt.subplots()
@@ -343,7 +343,7 @@ for adj_index in adj_iterable:
 
     if graphs == 'mean_field':
         Tc_inf_vs_adj[adj_index], Tc_inf_err_vs_adj[adj_index]= \
-            pf.extrapolate_thermodynamic_limit_mean_field_graphs(adjacencies[adj_index], sizes_vs_adj[adj_index], Tc_bootstrap,
+            pf.extrapolate_thermodynamic_limit_mean_field_graphs(sizes_vs_adj[adj_index], Tc_bootstrap,
                                                                  inv_peak_height_bootstrap, peak_width_bootstrap)[:2]
 
 

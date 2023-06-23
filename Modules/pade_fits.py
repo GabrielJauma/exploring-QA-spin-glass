@@ -97,7 +97,7 @@ class fit_pade:
         func = lambda x: sum(a[i] * x ** i for i in range(len(a))) / (1 + sum(b[i] * x ** i for i in range(len(b))))
         return func
 
-    def fitea_p(self, x, y, y_err, igu, verbose=False, maxfev=5000000, add_0=False):
+    def fitea_p(self, x, y, y_err, igu, verbose=False, maxfev=5000000):
         """
         Input;
         x, y, yerr ---> data to fit.
@@ -105,10 +105,7 @@ class fit_pade:
         igu     --->  parameters of the fitting
         """
         try:
-            if add_0:
-                popt, pcov = curve_fit(self.evalua_pade, np.concatenate([[0],x]), np.concatenate([[1],y]), igu, sigma=np.concatenate([[add_0],y_err]), maxfev=maxfev)
-            else:
-                popt, pcov = curve_fit(self.evalua_pade, x, y, igu, sigma=y_err, maxfev=maxfev)
+            popt, pcov = curve_fit(self.evalua_pade, x, y, igu, sigma=y_err, maxfev=maxfev)
         except:
             return [None], [None], 10, [None]
         perr = np.sqrt(np.abs(np.diag(pcov)))
@@ -118,7 +115,7 @@ class fit_pade:
         if verbose: print("chisq/df", chisq)
         return popt, perr, chisq, res
 
-    def pade_opt_rand(self, x, y, y_err, ntr=10, verbose=False, maxfev=5000000, add_0=False):
+    def pade_opt_rand(self, x, y, y_err, ntr=10, verbose=False, maxfev=5000000):
         """
         Fitea via Pade for many random initial parameters, so that the variance is extracted from all those
         fits in a similar fashion as for bootstrap.
@@ -129,7 +126,7 @@ class fit_pade:
         """
         # Return opt_parameter, errors, reduced_chis, res
         igu = [np.random.rand(self.n + self.m) for i in range(ntr)]
-        res = [self.fitea_p(x, y, y_err, p0, maxfev=maxfev, add_0=add_0) for p0 in igu]
+        res = [self.fitea_p(x, y, y_err, p0, maxfev=maxfev) for p0 in igu]
         xchi = np.array([res[i][2] for i in range(ntr)])
         ic = (np.abs(xchi)).argmin()
         mu = np.sum(xchi) / ntr
@@ -138,7 +135,7 @@ class fit_pade:
             print("best estimation has order", self.n, self.m, "  and rchi", xchi[ic])
         return res[ic]
 
-    def sev_func_pade(self, x, y, y_err, ntr=100, verbose=False, maxfev=5000000, add_0=False):
+    def sev_func_pade(self, x, y, y_err, ntr=100, verbose=False, maxfev=5000000):
         """
         Fitea via Pade for all curves
         Input;
@@ -148,7 +145,7 @@ class fit_pade:
         """
         if type(x) == list:
             n = len(x)
-            yv = [self.pade_opt_rand(x[i], y[i], y_err[i], ntr=ntr, verbose=verbose, maxfev=maxfev, add_0=add_0) for i in range(n)]
+            yv = [self.pade_opt_rand(x[i], y[i], y_err[i], ntr=ntr, verbose=verbose, maxfev=maxfev) for i in range(n)]
             para = [yv[i][0] for i in range(n)]
             rchi = [yv[i][2] for i in range(n)]
             func = [self.func_pade(*para[i]) for i in range(len(yv))]
@@ -259,9 +256,7 @@ class fitea_order_man:
                 print(popt[i], "+-", perr[i])
         return popt, perr, chisq, res
 
-
-# def pade_best(x, y, y_err, ntr=100, ic=[4, 5], jc=[2, 3], verbose=True, maxfev=500000):
-def pade_best(x, y, y_err, ntr=10, ic=[4, 5], jc=[2, 3], verbose=True, maxfev=10000, add_0=False):
+def pade_best(x, y, y_err, ntr=10, ic=[4, 5], jc=[2, 3], verbose=True, maxfev=10000):
     ppade = []
     fpade = []
     dfpade = []
@@ -271,7 +266,7 @@ def pade_best(x, y, y_err, ntr=10, ic=[4, 5], jc=[2, 3], verbose=True, maxfev=10
     inx = itertools.product(ic, jc)
     for order in inx:
         A = fit_pade(*order)
-        f_sev, pade_c, rchi = A.sev_func_pade(x[:], y[:], y_err[:], ntr=ntr, verbose=verbose, maxfev=maxfev, add_0=add_0)
+        f_sev, pade_c, rchi = A.sev_func_pade(x[:], y[:], y_err[:], ntr=ntr, verbose=verbose, maxfev=maxfev)
         if type(x) == list:
             df = [A.der_pade(pade_c[i]) for i in range(len(pade_c))]
         else:
@@ -298,14 +293,14 @@ def pade_best(x, y, y_err, ntr=10, ic=[4, 5], jc=[2, 3], verbose=True, maxfev=10
     return fpade_out, dfpade_out, st_chi[inopt], inopt
 
 
-def pade_best_specific_ic_jc(x_vs_size, y_vs_size, y_err_vs_size, ntr, ic_vs_size, jc_vs_size, verbose=True, maxfev=10000, add_0=False):
+def pade_best_specific_ic_jc(x_vs_size, y_vs_size, y_err_vs_size, ntr, ic_vs_size, jc_vs_size, verbose=True, maxfev=10000):
     fpade = []
     dfpade = []
     st_chi = []
 
     for x, y, y_err, ic, jc in zip(x_vs_size, y_vs_size, y_err_vs_size, ic_vs_size, jc_vs_size):
         A = fit_pade(ic, jc)
-        f_sev, pade_c, rchi = A.sev_func_pade(x, y, y_err, ntr=ntr, verbose=verbose, maxfev=maxfev, add_0=add_0)
+        f_sev, pade_c, rchi = A.sev_func_pade(x, y, y_err, ntr=ntr, verbose=verbose, maxfev=maxfev)
 
         df = A.der_pade(pade_c)
 
@@ -328,7 +323,34 @@ def pade_best_fast_different_ic_jc_each(x, y, y_err, ic=[5], jc=[6], ntr=10, max
 
 
 def pade_fss(sizes,  T_vs_size_best, dg_dT_vs_size_best, error_dg_dT_vs_size_best, T_term_vs_size=False,
-             ntr=10, ic=[5], jc=[6], add_0=False, method_ic_jc='best'):
+             ntr=10, ic=[5], jc=[6],method_ic_jc='best'):
+
+    """
+    This function applies the Pade approximant for finite-size scaling (FSS) and determines the peak position (Tc) and
+    peak height of the system for a set of given sizes.
+
+    Parameters:
+    sizes (list or numpy.ndarray): Array-like object containing the sizes of the system.
+    T_vs_size_best (list): List of temperatures for different system sizes at the best fit.
+    dg_dT_vs_size_best (list): List of derivatives of the binder cumulant with respect to temperature for
+                               different system sizes at the best fit.
+    error_dg_dT_vs_size_best (list): List of uncertainties in the derivatives of the binder cumulant for
+                                     different system sizes at the best fit.
+    T_term_vs_size (bool or list, optional): List of terminal temperatures for different system sizes.
+                                             If False, terminal temperature indices default to zero for all sizes.
+                                             Default is False.
+    ntr (int, optional): Number of tries used in the scipy optimize. Default is 10.
+    ic (list, optional): Degrees of the numerator polynomial in the Pade approximant. Default is [5].
+    jc (list, optional): Degrees of the denominator polynomial in the Pade approximant. Default is [6].
+    method_ic_jc (str, optional): Method to select the degrees of the numerator and denominator polynomials.
+                                  Can be 'best' or 'specific'. Default is 'best'.
+                                  It will try from all the posible numerators and denominators and return the one
+                                  that gives a chi square closer to 1
+
+    Returns:
+    tuple: Returns a tuple containing the Pade approximants, estimated critical temperatures and peak heights
+           for all system sizes.
+    """
 
     sizes = np.array(sizes)
 
@@ -345,9 +367,9 @@ def pade_fss(sizes,  T_vs_size_best, dg_dT_vs_size_best, error_dg_dT_vs_size_bes
     Tf = Tfit[0][-1]
 
     if method_ic_jc == 'best':
-        dg_dT_pade, _, l_rchi, inopt = pade_best(Tfit, Ofit, np.array(Ofit_er), ntr, ic, jc, add_0=add_0)
+        dg_dT_pade, _, l_rchi, inopt = pade_best(Tfit, Ofit, np.array(Ofit_er), ntr, ic, jc)
     elif method_ic_jc == 'specific':
-        dg_dT_pade, _, l_rchi, inopt = pade_best_specific_ic_jc(Tfit, Ofit, np.array(Ofit_er), ntr, ic, jc, add_0=add_0)
+        dg_dT_pade, _, l_rchi, inopt = pade_best_specific_ic_jc(Tfit, Ofit, np.array(Ofit_er), ntr, ic, jc)
 
     # Data to extrapolate the maxima
     T_c = estimate_Tc_with_pade(sizes, T0, Tf, dg_dT_pade, return_T_max=True)
@@ -466,8 +488,27 @@ def estimate_Tc_with_pade_bootstrap_parallel(sizes, T_vs_size, error_vs_size, dg
     return Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap, Tc, Tc_err, inv_peak_height, inv_peak_height_err, peak_width, peak_width_err
 
 # %%
-def extrapolate_thermodynamic_limit_mean_field_graphs(adjacency, sizes, Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap):
+def extrapolate_thermodynamic_limit_mean_field_graphs(sizes, Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap):
+    """
+     This function estimates the critical temperature (Tc) with the Pade approximant, utilizing a bootstrap method
+     for error estimation. It determines the inverse of the peak height and the peak width for each bootstrap sample.
 
+     Parameters:
+     sizes (list or numpy.ndarray): Array-like object containing the sizes of the system.
+     T_vs_size_best (list): List of temperatures for different system sizes at the best fit.
+     error_dg_dT_vs_size_best (list): List of uncertainties in the derivatives of the binder cumulant for
+                                      different system sizes at the best fit.
+     dg_dT_bootstrap_vs_size_best (list): List of derivatives of the binder cumulant with respect to temperature for
+                                          different system sizes at the best fit from bootstrap sampling.
+     ic (list, optional): Degrees of the numerator polynomial in the Pade approximant. Default is [5].
+     jc (list, optional): Degrees of the denominator polynomial in the Pade approximant. Default is [6].
+     ntr (int, optional): Number of temperatures used in the Pade approximant. Default is 10.
+     maxfev (int, optional): Maximum number of function evaluations for the Pade approximant. Default is 10000.
+
+     Returns:
+     tuple: Returns a tuple containing the critical temperatures, inverse peak heights and peak widths
+            for all bootstrap samples.
+     """
     Tc_inf_bootstrap = np.zeros(len(Tc_bootstrap))
     inv_peak_height_inf_bootstrap = np.zeros(len(inv_peak_height_bootstrap))
     peak_width_inf_bootstrap = np.zeros(len(peak_width_bootstrap))
