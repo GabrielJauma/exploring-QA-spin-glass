@@ -441,6 +441,26 @@ def estimate_Tc_with_pade_bootstrap(sizes, T_vs_size_best, error_dg_dT_vs_size_b
 # %%
 def estimate_Tc_with_pade_bootstrap_parallel(sizes, T_vs_size, error_vs_size, dg_dT_bootstrap_vs_size, ic=[5], jc=[6],
                                              ntr=10, maxfev=10000, threads=8):
+    """
+     This function estimates the critical temperature (Tc) with the Pade approximant, utilizing a bootstrap method
+     for error estimation. It determines the inverse of the peak height and the peak width for each bootstrap sample.
+
+     Parameters:
+     sizes (list or numpy.ndarray): Array-like object containing the sizes of the system.
+     T_vs_size_best (list): List of temperatures for different system sizes at the best fit.
+     error_dg_dT_vs_size_best (list): List of uncertainties in the derivatives of the binder cumulant for
+                                      different system sizes at the best fit.
+     dg_dT_bootstrap_vs_size_best (list): List of derivatives of the binder cumulant with respect to temperature for
+                                          different system sizes at the best fit from bootstrap sampling.
+     ic (list, optional): Degrees of the numerator polynomial in the Pade approximant. Default is [5].
+     jc (list, optional): Degrees of the denominator polynomial in the Pade approximant. Default is [6].
+     ntr (int, optional): Number of temperatures used in the Pade approximant. Default is 10.
+     maxfev (int, optional): Maximum number of function evaluations for the Pade approximant. Default is 10000.
+
+     Returns:
+     tuple: Returns a tuple containing the critical temperatures, inverse peak heights and peak widths
+            for all bootstrap samples.
+     """
     n_bootstrap = len(dg_dT_bootstrap_vs_size[0])
     n_bootstrap_per_thread = n_bootstrap // threads
     dg_dT_bootstrap_vs_size_vs_size_per_thread = [
@@ -490,25 +510,19 @@ def estimate_Tc_with_pade_bootstrap_parallel(sizes, T_vs_size, error_vs_size, dg
 # %%
 def extrapolate_thermodynamic_limit_mean_field_graphs(sizes, Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap):
     """
-     This function estimates the critical temperature (Tc) with the Pade approximant, utilizing a bootstrap method
-     for error estimation. It determines the inverse of the peak height and the peak width for each bootstrap sample.
+    This function extrapolates the thermodynamic limit of the critical temperature (Tc),
+    inverse peak height, and peak width for mean field graphs, based on the results from bootstrap sampling.
 
-     Parameters:
-     sizes (list or numpy.ndarray): Array-like object containing the sizes of the system.
-     T_vs_size_best (list): List of temperatures for different system sizes at the best fit.
-     error_dg_dT_vs_size_best (list): List of uncertainties in the derivatives of the binder cumulant for
-                                      different system sizes at the best fit.
-     dg_dT_bootstrap_vs_size_best (list): List of derivatives of the binder cumulant with respect to temperature for
-                                          different system sizes at the best fit from bootstrap sampling.
-     ic (list, optional): Degrees of the numerator polynomial in the Pade approximant. Default is [5].
-     jc (list, optional): Degrees of the denominator polynomial in the Pade approximant. Default is [6].
-     ntr (int, optional): Number of temperatures used in the Pade approximant. Default is 10.
-     maxfev (int, optional): Maximum number of function evaluations for the Pade approximant. Default is 10000.
+    Parameters:
+    sizes (list or numpy.ndarray): Array-like object containing the sizes of the system.
+    Tc_bootstrap (numpy.ndarray): Array containing the bootstrap samples for the critical temperatures.
+    inv_peak_height_bootstrap (numpy.ndarray): Array containing the bootstrap samples for the inverse peak heights.
+    peak_width_bootstrap (numpy.ndarray): Array containing the bootstrap samples for the peak widths.
 
-     Returns:
-     tuple: Returns a tuple containing the critical temperatures, inverse peak heights and peak widths
-            for all bootstrap samples.
-     """
+    Returns:
+    tuple: Returns a tuple containing the estimated thermodynamic limits for Tc, inverse peak height,
+           and peak width, as well as their associated uncertainties (standard deviations).
+    """
     Tc_inf_bootstrap = np.zeros(len(Tc_bootstrap))
     inv_peak_height_inf_bootstrap = np.zeros(len(inv_peak_height_bootstrap))
     peak_width_inf_bootstrap = np.zeros(len(peak_width_bootstrap))
