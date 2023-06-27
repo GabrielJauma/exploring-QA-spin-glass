@@ -1,16 +1,18 @@
 import sys
 import os
-
-home_dir = '/home/csic/qia/gjg'
-store_dir = '/mnt/netapp1/Store_CSIC/home/csic/qia/gjg'
-sys.path.extend([store_dir])
-sys.path.extend([home_dir])
 import numpy as np
 import pandas as pd
 from mpi4py import MPI
 from numpy.random import SeedSequence
 import Modules.monte_carlo as mc
 import Modules.graph_generator as gg
+
+# Get current directory and make a directory for the data
+home_dir = os.path.dirname(os.path.abspath(__file__))
+store_dir = os.path.join(home_dir, 'Data')
+os.makedirs(store_dir, exist_ok=True)
+sys.path.extend([store_dir])
+sys.path.extend([home_dir])
 
 # In data
 adjacency = str(sys.argv[1])

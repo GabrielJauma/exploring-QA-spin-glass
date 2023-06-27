@@ -367,7 +367,7 @@ def pade_fss(sizes,  T_vs_size_best, dg_dT_vs_size_best, error_dg_dT_vs_size_bes
     Tf = Tfit[0][-1]
 
     if method_ic_jc == 'best':
-        dg_dT_pade, _, l_rchi, inopt = pade_best(Tfit, Ofit, np.array(Ofit_er), ntr, ic, jc)
+        dg_dT_pade, _, l_rchi, inopt = pade_best(Tfit, Ofit, np.array(Ofit_er), ntr*2, ic, jc)
     elif method_ic_jc == 'specific':
         dg_dT_pade, _, l_rchi, inopt = pade_best_specific_ic_jc(Tfit, Ofit, np.array(Ofit_er), ntr, ic, jc)
 
