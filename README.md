@@ -42,6 +42,17 @@ itertools
 pandas
 
 ## Usage
+To run a simulation on a computing cluster where SLURM is available you should go to the Cluster folder and then run the following command:
+
+bash multiple_jobs_drago.sh [type of simulation] '[name_of_queue]' [graph_name] [probability_distribution_name] [Lowest value of temperature range] [Highest value of temperature range] '[size]' '[Max number of Monte Carlo Sweeps]' '[Number of jobs you want to create]'
+[type of simulation] must be binned or fast. Binned outputs all of the variables discussed in the paper. Fast only outputs the variables necessary to calculate the binder cumulant.
+[name of queue] is the name of the queue where you want to send the jobs
+[graph name] is the name of the graph that you want to simulate. The list of available graphs is in the Python file called graph_generator.py.
+[probability distribution name] must be gaussian_EA (the interactions are chosen from a gaussian pdf with 0 mean and 1 variance) or binary (binary distribution of +-1)
+[Lowest value of temperature range] and [Highest value of temperature range] are self descriptive variables. They refer to a file located in the "temperature_distributions" folder inside the Cluster folder. 
+The name of this file must be [graph_name]_[distribution_name],n=[size],T=[Lowest value of temperature range]_[Highest value of temperature range].dat, and it must only contain a list fo floatas representing the list of temperatures that you want to simulate in the parallel tempering algoriuthm.
+
+
 
 python read_and_process_raw_data.py will read the raw data, check it, and generate processed data.
 Open the generate_figures_paper.ipynb Jupyter notebook to generate the figures for the paper.
