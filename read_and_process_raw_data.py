@@ -72,33 +72,39 @@ max_MCSs_vs_adj_binned = np.array([[3, 3, 4, 6, 6],
                                    [5, 6, 7, 8, 8],
                                    [5, 6, 7, 8, 8],
                                    [5, 6, 7, 8, 8]])
+
+max_MCSs_vs_adj_fast =   np.array([[0, 0, 6, 7, 9],
+                                   [0, 0, 6, 7, 9],
+                                   [4, 5, 6, 7, 9],
+                                   [4, 5, 6, 7, 9],
+
+                                   [4, 5, 6, 7, 8],
+                                   [0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0],
+
+                                   [0, 0, 6, 7, 9],
+                                   [3, 3, 6, 7, 9],
+                                   [3, 3, 6, 7, 9]])
+
+max_MCSs_vs_adj_old =    np.array([[0, 0, 0, 0, 0],
+                                   [5, 5, 0, 0, 0],
+                                   [3, 3, 4, 6, 6],
+                                   [0, 0, 0, 0, 0],
+
+                                   [0, 0, 0, 0, 0],
+                                   [3, 3, 4, 5, 6],
+                                   [2, 2, 3, 4, 5],
+                                   [2, 2, 3, 4, 5],
+
+                                   [0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0]])
+
 max_MCSs_vs_adj_binned = MCS_avg_0 * 2 **  max_MCSs_vs_adj_binned
+max_MCSs_vs_adj_fast   = MCS_avg_0 * 2 **  max_MCSs_vs_adj_fast
+max_MCSs_vs_adj_old    = MCS_avg_0 * 2 **  max_MCSs_vs_adj_old
 
-max_MCSs_vs_adj_fast = np.array([[0, 0, 6, 7, 9],
-                                 [0, 0, 6, 7, 9],
-                                 [4, 5, 6, 7, 9],
-                                 [4, 5, 6, 7, 9],
-
-                                 [4, 5, 6, 7, 8],
-                                 [0, 0, 0, 0, 0],
-                                 [0, 0, 0, 0, 0],
-                                 [0, 0, 0, 0, 0],
-
-                                 [0, 0, 6, 7, 9],
-                                 [3, 3, 6, 7, 9],
-                                 [3, 3, 6, 7, 9]])
-max_MCSs_vs_adj_fast = MCS_avg_0 * 2 **  max_MCSs_vs_adj_fast
-max_MCSs_vs_adj_old = [MCS_avg_0 * 2 ** np.array([1, 2, 5, 6, 7]),
-                       MCS_avg_0 * 2 ** np.array([5, 5, 5, 5, 5]) + 4,
-                       np.array([80002, 80002, 160002, 640001, 640002]),
-                       MCS_avg_0 * 2 ** np.array([1, 2, 4, 5, 5]),
-                       MCS_avg_0 * 2 ** np.array([2, 2, 3, 4, 5]),
-                       MCS_avg_0 * 2 ** np.array([2, 2, 3, 4, 5]),
-                       MCS_avg_0 * 2 ** np.array([2, 2, 3, 4, 5]),
-                       MCS_avg_0 * 2 ** np.array([2, 2, 3, 4, 5]),
-                       MCS_avg_0 * 2 ** np.array([2, 2, 3, 4, 5]),
-                       MCS_avg_0 * 2 ** np.array([2, 2, 3, 4, 5]),
-                       MCS_avg_0 * 2 ** np.array([0, 0, 0, 0, 0])]
 
 sizes = [100, 200, 400, 800, 1600]
 sizes_vs_adj = [_ for _ in range(len(adjacencies))]
@@ -116,12 +122,12 @@ color_vs_size = ['turquoise',  'tab:olive', 'tab:green', 'tab:red', 'tab:purple'
 marker_vs_adjacency = ['^', '>', 'v', '<', '1', '2', '3', '.', '4', 'P', 'd', '*']
 
 # %% Choose an adjacency
-adj_index = 4
+adj_index = 3
 only_max_MCS = True  # Must be 'False' for thermalization tests, 'True' to read faster for the rest
-n_bootstrap = 36*20
-data_type = 'all'  # Must be 'binned' for thermalization tests
+n_bootstrap = 36*10
+data_type = 'all'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
 MCS_N_config_condition = 'max_MCS_with_a_minimum_of_N_configs'
-min_N_config = 1000
+min_N_config = 100
 
 adjacency = adjacencies[adj_index]
 T0 = T0_Tf_vs_adj[adj_index][0]
@@ -142,10 +148,10 @@ N_configs_vs_size_best, MCS_avg_vs_size_best, T_vs_size_best, g_vs_size_best, g_
     error_vs_size_best, dg_dT_vs_size_best, dg_dT_bootstrap_vs_size_best, error_dg_dT_vs_size_best = \
     sm.choose_optimal_MCS_N_config(sizes, N_configs_vs_size, MCS_avg_vs_size, T_vs_size, g_vs_size, g_bootstrap_vs_size, error_vs_size,
                                    dg_dT_vs_size, dg_dT_bootstrap_vs_size, error_dg_dT_vs_size,
-                                   MCS_N_config_condition='max_MCS_with_a_minimum_of_N_configs', min_N_config=1000)
+                                   MCS_N_config_condition=MCS_N_config_condition, min_N_config=min_N_config)
 
 #%% PROCESS DATA FOR FIGURES 9, 10, 11, 12 - Thermalization tests. TO PROCESS THIS DATA YOU MUST CHOOOSE data_type='binned' and only_max_MCS = False
-size_index = 3
+size_index = 4
 # %%  Thermalization test 1 - Logarithmic binning method
 copies = len(T_vs_size_best[size_index])
 n_conf = N_configs_vs_size_best[size_index]
