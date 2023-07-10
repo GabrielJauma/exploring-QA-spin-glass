@@ -376,7 +376,8 @@ def pade_fss(sizes,  T_vs_size_best, dg_dT_vs_size_best, error_dg_dT_vs_size_bes
 
     peak_height = np.array([dg_dT_pade[i](T_c[i]) for i in range(len(sizes))])
 
-    print(f'Tc = {np.polyfit(1 / sizes[-3:] ** (1 / 3), T_c[-3:], 1, cov=True)[0][-1]}')
+    print(f'Tc = {np.polyfit(1 / sizes[-2:] ** (1 / 3), T_c[-2:], 1)[-1]}')
+    print(f'Tc = {np.polyfit(1 / sizes ** (1 / 3), T_c, 2)[-1]}')
 
     return dg_dT_pade, T_c, peak_height
 

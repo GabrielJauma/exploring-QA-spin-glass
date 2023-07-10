@@ -33,19 +33,15 @@ distribution = 'gaussian_EA'
 adjacencies = ['random_regular_3', 'random_regular_5', 'random_regular_7', 'random_regular_9',
                '1D+', '1D+', '1D+', '1D+',
                'chimera', 'pegasus', 'zephyr']
-
 add_vs_adj = [0, 0, 0, 0,
               3.0, 5.0, 7.0, 9.0,
               0, 0, 0]
-
-
 T0_Tf_vs_adj = [[0.2, 1.5], [0.5, 3.0], [0.5, 3.0], [1.0, 4.0],
                 [0.2, 1.5], [1.0, 2.5], [1.3, 3.0], [1.5, 3.5],
                 [0.2, 3.0], [0.2, 4.0], [0.5, 5.0]]
-
 ic_jc_vs_adj = [[[3, 6, 6, 6, 4], [6, 3, 6, 6, 5]],
                 [[5, 5, 4, 6, 4], [4, 5, 5, 5, 6]],
-                [[6, 4, 5, 4, 6], [3, 6, 4, 6, 5]],
+                [[6, 4, 5, 5, 6], [3, 6, 4, 6, 5]],
                 [[5, 5, 6, 5, 5], [3, 4, 3, 5, 5]],
 
                 [[6, 5, 5, 5, 6], [3, 3, 3, 4, 4]],
@@ -56,8 +52,6 @@ ic_jc_vs_adj = [[[3, 6, 6, 6, 4], [6, 3, 6, 6, 5]],
                 [[3, 4, 3, 6, 6], [4, 5, 5, 5, 6]],
                 [[4, 4, 4, 4, 3], [5, 3, 4, 4, 6]],
                 [[3, 3, 5, 5, 4], [4, 4, 3, 3, 5]]]
-
-MCS_avg_0 = 10000
 
 max_MCSs_vs_adj_binned = np.array([[3, 3, 4, 6, 6],
                                    [0, 0, 0, 0, 0],
@@ -72,7 +66,6 @@ max_MCSs_vs_adj_binned = np.array([[3, 3, 4, 6, 6],
                                    [5, 6, 7, 8, 8],
                                    [5, 6, 7, 8, 8],
                                    [5, 6, 7, 8, 8]])
-
 max_MCSs_vs_adj_fast =   np.array([[0, 0, 6, 7, 9],
                                    [0, 0, 6, 7, 9],
                                    [4, 5, 6, 7, 9],
@@ -86,7 +79,6 @@ max_MCSs_vs_adj_fast =   np.array([[0, 0, 6, 7, 9],
                                    [0, 0, 6, 7, 9],
                                    [3, 3, 6, 7, 9],
                                    [3, 3, 6, 7, 9]])
-
 max_MCSs_vs_adj_old =    np.array([[0, 0, 0, 0, 0],
                                    [5, 5, 0, 0, 0],
                                    [3, 3, 4, 6, 6],
@@ -100,11 +92,10 @@ max_MCSs_vs_adj_old =    np.array([[0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0]])
-
+MCS_avg_0 = 10000
 max_MCSs_vs_adj_binned = MCS_avg_0 * 2 **  max_MCSs_vs_adj_binned
 max_MCSs_vs_adj_fast   = MCS_avg_0 * 2 **  max_MCSs_vs_adj_fast
 max_MCSs_vs_adj_old    = MCS_avg_0 * 2 **  max_MCSs_vs_adj_old
-
 
 sizes = [100, 200, 400, 800, 1600]
 sizes_vs_adj = [_ for _ in range(len(adjacencies))]
@@ -127,7 +118,7 @@ only_max_MCS = True  # Must be 'False' for thermalization tests, 'True' to read 
 n_bootstrap = 36*10
 data_type = 'all'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
 MCS_N_config_condition = 'max_MCS_with_a_minimum_of_N_configs'
-min_N_config = 100
+min_N_config = 1000
 
 adjacency = adjacencies[adj_index]
 T0 = T0_Tf_vs_adj[adj_index][0]
@@ -325,8 +316,8 @@ np.savez(fname, Tc=Tc, Tc_err=Tc_err, inv_peak_height=inv_peak_height, inv_peak_
          peak_width_inf_err=peak_width_inf_err, allow_pickle=True)
 
 #%% PROCESS DATA FOR FIGURES 4 AND 6 - Tc vs adjacency
-# graphs = 'mean_field'  # Fig. 4
-graphs = 'Dwave' # Fig. 6
+graphs = 'mean_field'  # Fig. 4
+# graphs = 'Dwave' # Fig. 6
 write_file = True
 # %% Tc vs adjacency
 if graphs == 'Dwave':
