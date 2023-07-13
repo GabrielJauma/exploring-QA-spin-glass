@@ -113,7 +113,7 @@ color_vs_size = ['turquoise',  'tab:olive', 'tab:green', 'tab:red', 'tab:purple'
 marker_vs_adjacency = ['^', '>', 'v', '<', '1', '2', '3', '.', '4', 'P', 'd', '*']
 
 # %% Choose an adjacency
-adj_index = 3
+adj_index = 1
 only_max_MCS = True  # Must be 'False' for thermalization tests, 'True' to read faster for the rest
 n_bootstrap = 36*10
 data_type = 'all'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
@@ -367,9 +367,8 @@ for adj_index in adj_iterable:
             pf.extrapolate_thermodynamic_limit_mean_field_graphs(sizes_vs_adj[adj_index], Tc_bootstrap,
                                                                  inv_peak_height_bootstrap, peak_width_bootstrap)[:2]
 
-
-for adj_index in adj_iterable:
-    if write_file:
+if write_file:
+    for adj_index in adj_iterable:
         for size_index in range(len(sizes)):
             add = add_vs_adj[adj_index]
             add_str = f'{add}'
@@ -381,8 +380,6 @@ for adj_index in adj_iterable:
             file_simulation_info.write(
                 f'{adjacencies[adj_index]}{bool(add > 0) * add_str} & \\infty &   &   &  &   &   &'
                 f'{Tc_inf_vs_adj[adj_index]:.3f} & {Tc_inf_err_vs_adj[adj_index]:.3f}  \\\\ \n')
-
-if write_file:
     file_simulation_info.close()
 
 # %% Store processed data
