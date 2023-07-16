@@ -323,7 +323,7 @@ def pade_best_fast_different_ic_jc_each(x, y, y_err, ic=[5], jc=[6], ntr=10, max
 
 
 def pade_fss(sizes,  T_vs_size_best, dg_dT_vs_size_best, error_dg_dT_vs_size_best, T_term_vs_size=False,
-             ntr=10, ic=[5], jc=[6],method_ic_jc='best'):
+             ntr=10, ic=[5], jc=[6], method_ic_jc='best'):
 
     """
     This function applies the Pade approximant for finite-size scaling (FSS) and determines the peak position (Tc) and
@@ -367,9 +367,9 @@ def pade_fss(sizes,  T_vs_size_best, dg_dT_vs_size_best, error_dg_dT_vs_size_bes
     Tf = Tfit[0][-1]
 
     if method_ic_jc == 'best':
-        dg_dT_pade, _, l_rchi, inopt = pade_best(Tfit, Ofit, np.array(Ofit_er), ntr*2, ic, jc)
+        dg_dT_pade, _, l_rchi, inopt = pade_best(Tfit, Ofit, Ofit_er, ntr*2, ic, jc)
     elif method_ic_jc == 'specific':
-        dg_dT_pade, _, l_rchi, inopt = pade_best_specific_ic_jc(Tfit, Ofit, np.array(Ofit_er), ntr, ic, jc)
+        dg_dT_pade, _, l_rchi, inopt = pade_best_specific_ic_jc(Tfit, Ofit, Ofit_er, ntr, ic, jc)
 
     # Data to extrapolate the maxima
     T_c = estimate_Tc_with_pade(sizes, T0, Tf, dg_dT_pade, return_T_max=True)
@@ -525,31 +525,31 @@ def extrapolate_thermodynamic_limit_mean_field_graphs(sizes, Tc_bootstrap, inv_p
            and peak width, as well as their associated uncertainties (standard deviations).
     """
 
-    # Tc_inf_bootstrap = np.zeros(len(Tc_bootstrap))
-    # inv_peak_height_inf_bootstrap = np.zeros(len(inv_peak_height_bootstrap))
-    # peak_width_inf_bootstrap = np.zeros(len(peak_width_bootstrap))
-    #
-    # for i, (Tc, inv_peak_height, peak_width) in enumerate(
-    #         zip(Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap)):
-    #     try:
-    #         Tc_inf_bootstrap[i] = np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], Tc[-2:], 1)[1]
-    #         inv_peak_height_inf_bootstrap[i] = \
-    #         np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], inv_peak_height[-2:], 1)[1]
-    #         peak_width_inf_bootstrap[i] = \
-    #         np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], peak_width[-2:], 1)[1]
-    #     except:
-    #         Tc_inf_bootstrap[i] = np.nan
-    #         inv_peak_height_inf_bootstrap[i] = np.nan
-    #         peak_width_inf_bootstrap[i] = np.nan
-    #
-    # Tc_inf = np.nanmean(Tc_inf_bootstrap)
-    # Tc_inf_err = 2 * np.nanstd(Tc_inf_bootstrap)
-    #
-    # inv_peak_height_inf = np.nanmean(inv_peak_height_inf_bootstrap)
-    # inv_peak_height_inf_err = 2 * np.nanstd(inv_peak_height_inf_bootstrap)
-    #
-    # peak_width_inf = np.nanmean(peak_width_inf_bootstrap)
-    # peak_width_inf_err = 2 * np.nanstd(peak_width_inf_bootstrap)
+    Tc_inf_bootstrap = np.zeros(len(Tc_bootstrap))
+    inv_peak_height_inf_bootstrap = np.zeros(len(inv_peak_height_bootstrap))
+    peak_width_inf_bootstrap = np.zeros(len(peak_width_bootstrap))
+
+    for i, (Tc, inv_peak_height, peak_width) in enumerate(
+            zip(Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap)):
+        try:
+            Tc_inf_bootstrap[i] = np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], Tc[-2:], 1)[1]
+            inv_peak_height_inf_bootstrap[i] = \
+            np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], inv_peak_height[-2:], 1)[1]
+            peak_width_inf_bootstrap[i] = \
+            np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], peak_width[-2:], 1)[1]
+        except:
+            Tc_inf_bootstrap[i] = np.nan
+            inv_peak_height_inf_bootstrap[i] = np.nan
+            peak_width_inf_bootstrap[i] = np.nan
+
+    Tc_inf = np.nanmean(Tc_inf_bootstrap)
+    Tc_inf_err = 2 * np.nanstd(Tc_inf_bootstrap)
+
+    inv_peak_height_inf = np.nanmean(inv_peak_height_inf_bootstrap)
+    inv_peak_height_inf_err = 2 * np.nanstd(inv_peak_height_inf_bootstrap)
+
+    peak_width_inf = np.nanmean(peak_width_inf_bootstrap)
+    peak_width_inf_err = 2 * np.nanstd(peak_width_inf_bootstrap)
 
     # Tc_inf = np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], np.nanmean(Tc_bootstrap,0)[-2:], 1)[1]
     # Tc_inf_err = np.abs(Tc_inf - np.polyfit((np.array(sizes) ** (-1 / 3))[:-2], np.nanmean(Tc_bootstrap,0)[:-2], 1)[1])
@@ -561,25 +561,25 @@ def extrapolate_thermodynamic_limit_mean_field_graphs(sizes, Tc_bootstrap, inv_p
     # peak_width_inf_err = np.abs(peak_width_inf - np.polyfit((np.array(sizes) ** (-1 / 3))[:-2], np.nanmean(peak_width_bootstrap,0)[:-2], 1)[1])
 
 
-    bootstrap_data = [Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap]
-    extrapolations = []
-    extrapolations_errors = []
-    sizes_power = (np.array(sizes) ** (-1 / 3))[-2:]
-
-    def poly1(x, m, b):
-        return m * x + b
-
-    for bootstrap_sample in bootstrap_data:
-        x = sizes_power
-        y = np.nanmean(bootstrap_sample, 0)[-2:]
-        yerr = 2 * np.nanstd(bootstrap_sample, 0)[-2:]
-
-        popt, pcov = curve_fit(poly1, x, y, sigma=yerr, absolute_sigma=True)
-
-        extrapolations.append( popt[-1] )
-        extrapolations_errors.append( 2 * np.sqrt(np.diag(pcov))[-1] )
-
-    Tc_inf, inv_peak_height_inf, peak_width_inf = extrapolations
-    Tc_inf_err, inv_peak_height_inf_err, peak_width_inf_err = extrapolations_errors
+    # bootstrap_data = [Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap]
+    # extrapolations = []
+    # extrapolations_errors = []
+    # sizes_power = (np.array(sizes) ** (-1 / 3))[-2:]
+    #
+    # def poly1(x, m, b):
+    #     return m * x + b
+    #
+    # for bootstrap_sample in bootstrap_data:
+    #     x = sizes_power
+    #     y = np.nanmean(bootstrap_sample, 0)[-2:]
+    #     yerr = 2 * np.nanstd(bootstrap_sample, 0)[-2:]
+    #
+    #     popt, pcov = curve_fit(poly1, x, y, sigma=yerr, absolute_sigma=True)
+    #
+    #     extrapolations.append( popt[-1] )
+    #     extrapolations_errors.append( 2 * np.sqrt(np.diag(pcov))[-1] )
+    #
+    # Tc_inf, inv_peak_height_inf, peak_width_inf = extrapolations
+    # Tc_inf_err, inv_peak_height_inf_err, peak_width_inf_err = extrapolations_errors
 
     return Tc_inf, Tc_inf_err, inv_peak_height_inf, inv_peak_height_inf_err, peak_width_inf, peak_width_inf_err

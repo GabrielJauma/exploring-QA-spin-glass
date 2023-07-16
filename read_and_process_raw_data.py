@@ -1,17 +1,17 @@
 # %% Imports
 import sys
 import importlib
-from joblib import Parallel, delayed, cpu_count
+from joblib import cpu_count
 
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.stats as sps
 from scipy.optimize import curve_fit
 
 import Modules.read_data_from_cluster as rfc
 import Modules.statistical_mechanics as sm
 import Modules.pade_fits as pf
 import Modules.figures as figs
+
 
 plt.rcParams['font.size'] = '16'
 plt.rcParams['figure.dpi'] = '200'
@@ -45,8 +45,8 @@ ic_jc_vs_adj = [[[3, 6, 6, 6, 4], [6, 3, 6, 6, 5]],
                 [[5, 5, 6, 5, 5], [3, 4, 3, 5, 5]],
 
                 [[6, 5, 5, 5, 6], [3, 3, 3, 4, 4]],
-                [[4, 4, 4, 5, 5], [5, 5, 4, 4, 4]],
-                [[4, 6, 6, 4, 4], [5, 5, 5, 4, 4]],
+                [[6, 3, 4, 5, 6], [3, 4, 4, 5, 4]],
+                [[3, 3, 4, 5, 5], [4, 4, 3, 4, 4]],
                 [[4, 4, 4, 4, 4], [5, 4, 4, 4, 4]],
 
                 [[3, 4, 3, 6, 6], [4, 5, 5, 5, 6]],
@@ -72,8 +72,8 @@ max_MCSs_vs_adj_fast =   np.array([[0, 0, 6, 7, 9],
                                    [4, 5, 6, 7, 9],
 
                                    [4, 5, 6, 7, 8],
-                                   [0, 0, 0, 0, 0],
-                                   [0, 0, 0, 0, 0],
+                                   [4, 5, 6, 7, 8],
+                                   [4, 5, 6, 7, 8],
                                    [0, 0, 0, 0, 0],
 
                                    [0, 0, 6, 7, 9],
@@ -113,7 +113,7 @@ color_vs_size = ['turquoise',  'tab:olive', 'tab:green', 'tab:red', 'tab:purple'
 marker_vs_adjacency = ['^', '>', 'v', '<', '1', '2', '3', '.', '4', 'P', 'd', '*']
 
 # %% Choose an adjacency
-adj_index = 1
+adj_index = 9
 only_max_MCS = True  # Must be 'False' for thermalization tests, 'True' to read faster for the rest
 n_bootstrap = 36*10
 data_type = 'all'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
@@ -235,14 +235,12 @@ fig.show()
 # %% Calculate pade fits of dgdT
 ic = ic_jc_vs_adj[adj_index][0]
 jc = ic_jc_vs_adj[adj_index][1]
-# ic = np.arange(3,7)
-# jc = np.arange(3,7)
+# ic = np.arange(3, 7)
+# jc = np.arange(3, 7)
 dg_dT_pade, T_c, peak_height = pf.pade_fss(sizes_vs_adj[adj_index], T_vs_size_best, dg_dT_vs_size_best,
                                                   error_dg_dT_vs_size_best, T_term_vs_size=False, ntr=10,
-                                                  ic=ic, jc=jc,
-                                                  method_ic_jc='specific')
-# %%
-# Set figure parameters
+                                                  ic=ic, jc=jc, method_ic_jc='specific')
+# %% Plot pade fits of dgdT
 aspect_ratio_g_and_dg_dT = 1
 aspect_ratio_fits =  0.8
 T0 = T_vs_size_best[-1][0]
@@ -255,12 +253,12 @@ fig, ax = plt.subplots()
 for size_index in reversed(range(len(sizes))):
     ax.errorbar(T_vs_size_best[size_index], -dg_dT_vs_size_best[size_index], yerr=error_dg_dT_vs_size_best[size_index],
                    linewidth=0, markerfacecolor="None", capsize=4, capthick=1,
-                 elinewidth=1, color=color_vs_size[size_index])
+                 elinewidth=1, color=color_vs_size[size_index], label=sizes_vs_adj[adj_index][size_index])
     ax.plot(T_fit, -dg_dT_pade[size_index](T_fit), color=color_vs_size[size_index],linewidth=1.25)
     ax.plot(T_c[size_index], -peak_height[size_index], 'o', color=color_vs_size[size_index], markerfacecolor='white',linewidth=1.25)
 ax.set_xlabel('$T$')
 ax.set_ylabel("$dg/dT$")
-ax.legend(loc='lower left')
+ax.legend()
 ax.set_box_aspect(aspect_ratio_fits)
 ax.set_ylim([0,  -peak_height[-1]*1.05 ])
 fig.tight_layout()
@@ -289,8 +287,11 @@ Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap, \
                                                 jc=ic_jc_vs_adj[adj_index][1], ntr=10, maxfev=10000, threads=cpu_count())
 
 # %% Extrapolate previous values to thermodynamic limit for the mean field case
-Tc_inf, Tc_inf_err, inv_peak_height_inf, inv_peak_height_inf_err, peak_width_inf, peak_width_inf_err =\
-    pf.extrapolate_thermodynamic_limit_mean_field_graphs(sizes, Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap)
+if adjacency == 'chimera' or adjacency == 'pegasus' or adjacency == 'zephyr':
+    Tc_inf, Tc_inf_err, inv_peak_height_inf, inv_peak_height_inf_err, peak_width_inf, peak_width_inf_err = [None]*6
+else:
+    Tc_inf, Tc_inf_err, inv_peak_height_inf, inv_peak_height_inf_err, peak_width_inf, peak_width_inf_err =\
+        pf.extrapolate_thermodynamic_limit_mean_field_graphs(sizes, Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap)
 
 # %% Histogram of bootstrap variables to check that they are gaussian like
 fig, ax = plt.subplots()
@@ -373,7 +374,7 @@ if write_file:
             add = add_vs_adj[adj_index]
             add_str = f'{add}'
             file_simulation_info.write(f'{adjacencies[adj_index]}{ bool(add>0)*add_str } & {sizes_vs_adj[adj_index][size_index]} & '
-                                       f'{T0_Tf_vs_adj[adj_index][1]} & {T0_Tf_vs_adj[adj_index][1]} & {copies_vs_size[size_index][0]} & '
+                                       f'{T0_Tf_vs_adj[adj_index][0]} & {T0_Tf_vs_adj[adj_index][1]} & {copies_vs_size[size_index][0]} & '
                                        f'{MCS_avg_vs_size_best_vs_adj[adj_index][size_index]} & {N_configs_vs_size_best_vs_adj[adj_index][size_index]} &'
                                        f'{Tc_vs_adj[adj_index][size_index]:.3f} & {Tc_err_vs_adj[adj_index][size_index]:.3f}  \\\\ \n')
         if graphs == 'mean_field':
@@ -384,7 +385,7 @@ if write_file:
 
 # %% Store processed data
 fname = f'Processed_Data/Tc_vs_adj_{graphs}_read_mode={MCS_N_config_condition}_min_N_config={min_N_config}'
-np.savez(fname,Tc_vs_adj=Tc_vs_adj, Tc_err_vs_adj=Tc_err_vs_adj, Tc_inf_vs_adj=Tc_inf_vs_adj,
+np.savez(fname, Tc_vs_adj=Tc_vs_adj, Tc_err_vs_adj=Tc_err_vs_adj, Tc_inf_vs_adj=Tc_inf_vs_adj,
          Tc_inf_err_vs_adj=Tc_inf_err_vs_adj,  allow_pickle=True)
 
 #%% PROCESS DATA FOR FIGURES 7, 8 AND 13 - Autocorrelation times
@@ -477,7 +478,7 @@ np.savez(fname, T_tau_vs_adj=T_tau_vs_adj, T_fit_tau_vs_adj=T_fit_tau_vs_adj,
          exp_scaling_params_log_tau_vs_size_for_specific_T_vs_adj=exp_scaling_params_log_tau_vs_size_for_specific_T_vs_adj,
          start_range_vs_adj=start_range_vs_adj, end_range_vs_adj=end_range_vs_adj, allow_pickle=True)
 
-#%% Create optimal temperature distribution for parallel tempering
+#%% CREATE OPTIMAL TEMPERATURE DISTRIBUTION FOR PARALLEL TEMPERING
 pass
 # %% Calculate Cv
 CvT_vs_size = []
