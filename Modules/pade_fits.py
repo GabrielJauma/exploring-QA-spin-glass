@@ -376,7 +376,7 @@ def pade_fss(sizes,  T_vs_size_best, dg_dT_vs_size_best, error_dg_dT_vs_size_bes
 
     peak_height = np.array([dg_dT_pade[i](T_c[i]) for i in range(len(sizes))])
 
-    print(f'Tc = {np.polyfit(1 / sizes[-2:] ** (1 / 3), T_c[-2:], 1)[-1]}')
+    print(f'Tc = {np.polyfit(1 / sizes[-3:] ** (1 / 3), T_c[-3:], 1)[-1]}')
     print(f'Tc = {np.polyfit(1 / sizes ** (1 / 3), T_c, 2)[-1]}')
 
     return dg_dT_pade, T_c, peak_height
@@ -532,11 +532,11 @@ def extrapolate_thermodynamic_limit_mean_field_graphs(sizes, Tc_bootstrap, inv_p
     for i, (Tc, inv_peak_height, peak_width) in enumerate(
             zip(Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap)):
         try:
-            Tc_inf_bootstrap[i] = np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], Tc[-2:], 1)[1]
+            Tc_inf_bootstrap[i] = np.polyfit((np.array(sizes) ** (-1 / 3))[-3:], Tc[-3:], 1)[1]
             inv_peak_height_inf_bootstrap[i] = \
-            np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], inv_peak_height[-2:], 1)[1]
+            np.polyfit((np.array(sizes) ** (-1 / 3))[-3:], inv_peak_height[-3:], 1)[1]
             peak_width_inf_bootstrap[i] = \
-            np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], peak_width[-2:], 1)[1]
+            np.polyfit((np.array(sizes) ** (-1 / 3))[-3:], peak_width[-3:], 1)[1]
         except:
             Tc_inf_bootstrap[i] = np.nan
             inv_peak_height_inf_bootstrap[i] = np.nan
@@ -551,28 +551,28 @@ def extrapolate_thermodynamic_limit_mean_field_graphs(sizes, Tc_bootstrap, inv_p
     peak_width_inf = np.nanmean(peak_width_inf_bootstrap)
     peak_width_inf_err = 2 * np.nanstd(peak_width_inf_bootstrap)
 
-    # Tc_inf = np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], np.nanmean(Tc_bootstrap,0)[-2:], 1)[1]
-    # Tc_inf_err = np.abs(Tc_inf - np.polyfit((np.array(sizes) ** (-1 / 3))[:-2], np.nanmean(Tc_bootstrap,0)[:-2], 1)[1])
+    # Tc_inf = np.polyfit((np.array(sizes) ** (-1 / 3))[-3:], np.nanmean(Tc_bootstrap,0)[-3:], 1)[1]
+    # Tc_inf_err = np.abs(Tc_inf - np.polyfit((np.array(sizes) ** (-1 / 3))[:-3], np.nanmean(Tc_bootstrap,0)[:-3], 1)[1])
     #
-    # inv_peak_height_inf = np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], np.nanmean(inv_peak_height_bootstrap,0)[-2:], 1)[1]
-    # inv_peak_height_inf_err = np.abs(inv_peak_height_inf - np.polyfit((np.array(sizes) ** (-1 / 3))[:-2], np.nanmean(inv_peak_height_bootstrap,0)[:-2], 1)[1])
+    # inv_peak_height_inf = np.polyfit((np.array(sizes) ** (-1 / 3))[-3:], np.nanmean(inv_peak_height_bootstrap,0)[-3:], 1)[1]
+    # inv_peak_height_inf_err = np.abs(inv_peak_height_inf - np.polyfit((np.array(sizes) ** (-1 / 3))[:-3], np.nanmean(inv_peak_height_bootstrap,0)[:-3], 1)[1])
     #
-    # peak_width_inf = np.polyfit((np.array(sizes) ** (-1 / 3))[-2:], np.nanmean(peak_width_bootstrap,0)[-2:], 1)[1]
-    # peak_width_inf_err = np.abs(peak_width_inf - np.polyfit((np.array(sizes) ** (-1 / 3))[:-2], np.nanmean(peak_width_bootstrap,0)[:-2], 1)[1])
+    # peak_width_inf = np.polyfit((np.array(sizes) ** (-1 / 3))[-3:], np.nanmean(peak_width_bootstrap,0)[-3:], 1)[1]
+    # peak_width_inf_err = np.abs(peak_width_inf - np.polyfit((np.array(sizes) ** (-1 / 3))[:-3], np.nanmean(peak_width_bootstrap,0)[:-3], 1)[1])
 
 
     # bootstrap_data = [Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap]
     # extrapolations = []
     # extrapolations_errors = []
-    # sizes_power = (np.array(sizes) ** (-1 / 3))[-2:]
+    # sizes_power = (np.array(sizes) ** (-1 / 3))[-3:]
     #
     # def poly1(x, m, b):
     #     return m * x + b
     #
     # for bootstrap_sample in bootstrap_data:
     #     x = sizes_power
-    #     y = np.nanmean(bootstrap_sample, 0)[-2:]
-    #     yerr = 2 * np.nanstd(bootstrap_sample, 0)[-2:]
+    #     y = np.nanmean(bootstrap_sample, 0)[-3:]
+    #     yerr = 2 * np.nanstd(bootstrap_sample, 0)[-3:]
     #
     #     popt, pcov = curve_fit(poly1, x, y, sigma=yerr, absolute_sigma=True)
     #
