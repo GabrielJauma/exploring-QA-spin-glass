@@ -9,12 +9,12 @@ This repository is structured as follows:
 ### Modules
 This folder contains several Python scripts:
 
-graph_generator.py to generate graph instances for statistical averages.
-monte_carlo.py functions regarding Markov Chain Monte Carlo and parallel tempering.
-statistical_mechanics.py functions to calculate statistical mechanics properties from the data.
-pade_fits.py for performing pade fits of data and extracting properties from it.
-read_data_from_cluster.py functions for reading the raw data.
-figures.py for functions to help in the process of generating figures.
+graph_generator.py generates graph instances for statistical averages.
+monte_carlo.py contains functions regarding Markov Chain Monte Carlo and parallel tempering.
+statistical_mechanics.py contains functions to calculate statistical mechanics properties from the data.
+pade_fits.py contains functions to perform pade fits of data and extract properties from it.
+read_data_from_cluster.py contains functions to read the raw data.
+figures.py contains functions to streamline the process of generating figures.
 
 ### Processed Data
 This folder contains the processed data necessary to create the figures of the scientific paper.
@@ -42,10 +42,11 @@ itertools
 pandas
 
 ## Usage
-To run a simulation on a computing cluster where SLURM is available you should go to the Cluster folder and then run the following command:
+If you want to run all the simulations, on a computing cluster where SLURM is available, to obtain all the raw data of the article you should run the script 'run_all_simulations.sh' located in the Cluster folder.
 
+To run a single simulation you should run the bash multiple_jobs_drago.sh script with the following parameters:
 
-bash multiple_jobs_drago.sh [type of simulation] '[name_of_queue]' [graph_name] [probability_distribution_name] [Lowest value of temperature range] [Highest value of temperature range] '[size]' '[Max number of Monte Carlo Sweeps]' '[Number of jobs]'
+bash multiple_jobs_drago.sh [type of simulation] '[name_of_queue]' [graph_name] [probability_distribution_name] [Lowest value of temperature range] [Highest value of temperature range] '[size]' '[Max number of Monte Carlo Sweeps]' '[Number of jobs]' [additional connections]
 
 [type of simulation] must be binned or fast. Binned outputs all of the variables discussed in the paper. Fast only outputs the variables necessary to calculate the binder cumulant.
 
@@ -65,11 +66,13 @@ The name of this file must be [graph_name]_[distribution_name],n=[size],T=[Lowes
 
 [Number of jobs] is the number of SLURM jobs that you want to create. Each job will attempt to simulate 10000 diferent realizations of the same graph, stopping and storing the result as it finishes with one realization and goes to the next.
 
+[additional connections] Optional parameter. Use this only for small-world networks. This parameter specifies the number of additional connections to the 1D ring in order to generate the small-world networks.
+
 An example of usage would be:
 
 bash multiple_jobs_drago.sh fast 'medium' random_regular_7 gaussian_EA 0.5 3.0 '800' '1280000' '30'
 
-note that the variables between quotation marks allow to include multiple elements, for instance, to do the same simulation for different sizes:
+Note that the variables between quotation marks allow to include multiple elements, for instance, to do the same simulation for different sizes:
 
 bash multiple_jobs.sh fast 'short short medium medium long' random_regular_7 gaussian_EA 0.5 3.0 '100 200 400 800 1600' '160000 320000 640000 1280000 5120000' '2 4 16 32 50'
 
