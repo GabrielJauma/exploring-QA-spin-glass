@@ -551,35 +551,4 @@ def extrapolate_thermodynamic_limit_mean_field_graphs(sizes, Tc_bootstrap, inv_p
     peak_width_inf = np.nanmean(peak_width_inf_bootstrap)
     peak_width_inf_err = 2 * np.nanstd(peak_width_inf_bootstrap)
 
-    # Tc_inf = np.polyfit((np.array(sizes) ** (-1 / 3))[-3:], np.nanmean(Tc_bootstrap,0)[-3:], 1)[1]
-    # Tc_inf_err = np.abs(Tc_inf - np.polyfit((np.array(sizes) ** (-1 / 3))[:-3], np.nanmean(Tc_bootstrap,0)[:-3], 1)[1])
-    #
-    # inv_peak_height_inf = np.polyfit((np.array(sizes) ** (-1 / 3))[-3:], np.nanmean(inv_peak_height_bootstrap,0)[-3:], 1)[1]
-    # inv_peak_height_inf_err = np.abs(inv_peak_height_inf - np.polyfit((np.array(sizes) ** (-1 / 3))[:-3], np.nanmean(inv_peak_height_bootstrap,0)[:-3], 1)[1])
-    #
-    # peak_width_inf = np.polyfit((np.array(sizes) ** (-1 / 3))[-3:], np.nanmean(peak_width_bootstrap,0)[-3:], 1)[1]
-    # peak_width_inf_err = np.abs(peak_width_inf - np.polyfit((np.array(sizes) ** (-1 / 3))[:-3], np.nanmean(peak_width_bootstrap,0)[:-3], 1)[1])
-
-
-    # bootstrap_data = [Tc_bootstrap, inv_peak_height_bootstrap, peak_width_bootstrap]
-    # extrapolations = []
-    # extrapolations_errors = []
-    # sizes_power = (np.array(sizes) ** (-1 / 3))[-3:]
-    #
-    # def poly1(x, m, b):
-    #     return m * x + b
-    #
-    # for bootstrap_sample in bootstrap_data:
-    #     x = sizes_power
-    #     y = np.nanmean(bootstrap_sample, 0)[-3:]
-    #     yerr = 2 * np.nanstd(bootstrap_sample, 0)[-3:]
-    #
-    #     popt, pcov = curve_fit(poly1, x, y, sigma=yerr, absolute_sigma=True)
-    #
-    #     extrapolations.append( popt[-1] )
-    #     extrapolations_errors.append( 2 * np.sqrt(np.diag(pcov))[-1] )
-    #
-    # Tc_inf, inv_peak_height_inf, peak_width_inf = extrapolations
-    # Tc_inf_err, inv_peak_height_inf_err, peak_width_inf_err = extrapolations_errors
-
     return Tc_inf, Tc_inf_err, inv_peak_height_inf, inv_peak_height_inf_err, peak_width_inf, peak_width_inf_err
