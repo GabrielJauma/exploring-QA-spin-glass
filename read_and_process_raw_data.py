@@ -39,73 +39,74 @@ add_vs_adj = [0, 0, 0, 0,
 T0_Tf_vs_adj = [[0.2, 1.5], [0.5, 3.0], [0.5, 3.0], [1.0, 4.0],
                 [0.2, 1.5], [1.0, 2.5], [1.3, 3.0], [1.5, 3.5],
                 [0.2, 3.0], [0.2, 4.0], [0.5, 5.0]]
-ic_jc_vs_adj = [[[3, 6, 6, 6, 4], [6, 3, 6, 6, 5]],
-                [[5, 5, 4, 6, 4], [4, 5, 5, 5, 6]],
-                [[6, 4, 5, 5, 6], [3, 6, 4, 6, 5]],
-                [[5, 5, 6, 5, 5], [3, 4, 3, 5, 5]],
+ic_jc_vs_adj = [[[3, 6, 6, 6, 0, 4, 0], [6, 3, 6, 0, 6, 0, 5]],
+                [[5, 5, 4, 6, 0, 4, 0], [4, 5, 5, 0, 5, 0, 6]],
+                [[6, 4, 5, 5, 0, 6, 0], [3, 6, 4, 0, 6, 0, 5]],
+                [[5, 5, 6, 5, 0, 5, 0], [3, 4, 3, 0, 5, 0, 5]],
 
-                [[6, 5, 5, 5, 6], [3, 3, 3, 4, 4]],
-                [[6, 3, 4, 5, 6], [3, 4, 4, 5, 4]],
-                [[3, 3, 4, 5, 5], [4, 4, 3, 4, 4]],
-                [[4, 4, 4, 4, 4], [5, 4, 4, 4, 4]],
+                [[6, 5, 5, 5, 0, 6, 0], [3, 3, 3, 0, 4, 0, 4]],
+                [[6, 3, 4, 5, 0, 6, 0], [3, 4, 4, 0, 5, 0, 4]],
+                [[3, 3, 4, 5, 0, 5, 0], [4, 4, 3, 0, 4, 0, 4]],
+                [[4, 4, 4, 4, 0, 4, 0], [5, 4, 4, 0, 4, 0, 4]],
 
-                [[3, 4, 3, 6, 6], [4, 5, 5, 5, 6]],
-                [[4, 4, 4, 4, 3], [5, 3, 4, 4, 6]],
-                [[3, 3, 5, 5, 4], [4, 4, 3, 3, 5]]]
+                [[3, 4, 3, 6, 6, 6, 6], [4, 5, 5, 5, 5, 6, 6]],
+                [[4, 4, 4, 4, 4, 3, 3], [5, 3, 4, 4, 4, 6, 6]],
+                [[3, 3, 5, 5, 5, 4, 4], [4, 4, 3, 3, 3, 5, 5]]]
 
-max_MCSs_vs_adj_binned = np.array([[3, 3, 4, 6, 6],
-                                   [0, 0, 0, 0, 0],
-                                   [0, 0, 0, 0, 0],
-                                   [3, 3, 4, 6, 6],
+max_MCSs_vs_adj_binned = np.array([[3, 3, 4, 6, 0, 6, 0],
+                                   [0, 0, 0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0, 0, 0],
+                                   [3, 3, 4, 6, 0, 6, 0],
 
-                                   [0, 0, 0, 0, 0],
-                                   [0, 0, 0, 0, 0],
-                                   [0, 0, 0, 0, 0],
-                                   [0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0, 0, 0],
 
-                                   [5, 6, 7, 8, 8],
-                                   [5, 6, 7, 8, 8],
-                                   [5, 6, 7, 8, 8]])
-max_MCSs_vs_adj_fast =   np.array([[0, 0, 6, 7, 9],
-                                   [0, 0, 6, 7, 9],
-                                   [4, 5, 6, 7, 9],
-                                   [4, 5, 6, 7, 9],
+                                   [5, 6, 7, 8, 0, 8, 0],
+                                   [5, 6, 7, 8, 0, 8, 0],
+                                   [5, 6, 7, 8, 0, 8, 0]])
+max_MCSs_vs_adj_fast =   np.array([[0, 0, 6, 7, 0, 9, 0],
+                                   [0, 0, 6, 7, 0, 9, 0],
+                                   [4, 5, 6, 7, 0, 9, 0],
+                                   [4, 5, 6, 7, 0, 9, 0],
 
-                                   [4, 5, 6, 7, 8],
-                                   [4, 5, 6, 7, 8],
-                                   [4, 5, 6, 7, 8],
-                                   [0, 0, 0, 0, 0],
+                                   [4, 5, 6, 7, 0, 8, 0],
+                                   [4, 5, 6, 7, 0, 8, 0],
+                                   [4, 5, 6, 7, 0, 8, 0],
+                                   [0, 0, 0, 0, 0, 0, 0],
 
-                                   [0, 0, 6, 7, 9],
-                                   [3, 3, 6, 7, 9],
-                                   [3, 3, 6, 7, 9]])
-max_MCSs_vs_adj_old =    np.array([[0, 0, 0, 0, 0],
-                                   [5, 5, 0, 0, 0],
-                                   [3, 3, 4, 6, 6],
-                                   [0, 0, 0, 0, 0],
+                                   [0, 0, 6, 7, 8, 9, 10],
+                                   [3, 3, 6, 7, 8, 9, 10],
+                                   [3, 3, 6, 7, 8, 9, 10]])
 
-                                   [0, 0, 0, 0, 0],
-                                   [3, 3, 4, 5, 6],
-                                   [2, 2, 3, 4, 5],
-                                   [2, 2, 3, 4, 5],
+max_MCSs_vs_adj_old =    np.array([[0, 0, 0, 0, 0, 0, 0],
+                                   [5, 5, 0, 0, 0, 0, 0],
+                                   [3, 3, 4, 6, 0, 6, 0],
+                                   [0, 0, 0, 0, 0, 0, 0] ,
 
-                                   [0, 0, 0, 0, 0],
-                                   [0, 0, 0, 0, 0],
-                                   [0, 0, 0, 0, 0]])
+                                   [0, 0, 0, 0, 0, 0, 0],
+                                   [3, 3, 4, 5, 0, 6, 0],
+                                   [2, 2, 3, 4, 0, 5, 0],
+                                   [2, 2, 3, 4, 0, 5, 0] ,
+
+                                   [0, 0, 0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0, 0, 0]])
 MCS_avg_0 = 10000
 max_MCSs_vs_adj_binned = MCS_avg_0 * 2 **  max_MCSs_vs_adj_binned
 max_MCSs_vs_adj_fast   = MCS_avg_0 * 2 **  max_MCSs_vs_adj_fast
 max_MCSs_vs_adj_old    = MCS_avg_0 * 2 **  max_MCSs_vs_adj_old
 
-sizes = [100, 200, 400, 800, 1600]
+sizes = [100, 200, 400, 800, 1200, 1600, 2000]
 sizes_vs_adj = [_ for _ in range(len(adjacencies))]
 for i, adj in enumerate(adjacencies):
     if adj == 'chimera':
-        sizes_vs_adj[i] = [72, 200, 392, 800, 1568]
+        sizes_vs_adj[i] = [72, 200, 392, 800, 1152, 1568, 1800]
     elif adj == 'pegasus':
-        sizes_vs_adj[i] = [128, 256, 448, 960, 1664]
+        sizes_vs_adj[i] = [128, 256, 448, 960, 1288, 1664, 2088]
     elif adj == 'zephyr':
-        sizes_vs_adj[i] = [48, 160, 336, 576, 1248]
+        sizes_vs_adj[i] = [48, 160, 336, 576, 880, 1248, 1680]
     else:
         sizes_vs_adj[i] = sizes
 
@@ -113,7 +114,7 @@ color_vs_size = ['turquoise',  'tab:olive', 'tab:green', 'tab:red', 'tab:purple'
 marker_vs_adjacency = ['^', '>', 'v', '<', '1', '2', '3', '.', '4', 'P', 'd', '*']
 
 # %% Choose an adjacency
-adj_index = 2
+adj_index = 10
 only_max_MCS = True  # Must be 'False' for thermalization tests, 'True' to read faster for the rest
 n_bootstrap = 36*10
 data_type = 'fast'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
@@ -134,6 +135,7 @@ MCS_avg_vs_size, N_configs_vs_size, copies_vs_size, labels_vs_size, T_vs_size, q
 # %% Calculate g and dgdT with errors using bootstrap
 g_vs_size, g_bootstrap_vs_size, error_vs_size, dg_dT_vs_size, dg_dT_bootstrap_vs_size, error_dg_dT_vs_size =\
     sm.binder_cumulant_parallel(sizes, T_vs_size, MCS_avg_vs_size, q2_vs_size, q4_vs_size, n_bootstrap)
+
 # %% Choose the optimal simulation (in terms of MCS and N_configs) for each size
 N_configs_vs_size_best, MCS_avg_vs_size_best, T_vs_size_best, g_vs_size_best, g_bootstrap_vs_size_best, \
     error_vs_size_best, dg_dT_vs_size_best, dg_dT_bootstrap_vs_size_best, error_dg_dT_vs_size_best = \
