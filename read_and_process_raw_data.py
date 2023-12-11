@@ -114,10 +114,10 @@ color_vs_size = ['turquoise',  'tab:olive', 'tab:green', 'tab:red', 'tab:purple'
 marker_vs_adjacency = ['^', '>', 'v', '<', '1', '2', '3', '.', '4', 'P', 'd', '*']
 
 # %% Choose an adjacency
-adj_index = 9
+adj_index = 10
 only_max_MCS = True  # Must be 'False' for thermalization tests, 'True' to read faster for the rest
 n_bootstrap = 36*10
-data_type = 'binned'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
+data_type = 'all'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
 MCS_N_config_condition = 'max_MCS_with_a_minimum_of_N_configs'
 min_N_config = 1000
 
