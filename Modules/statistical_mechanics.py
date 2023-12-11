@@ -110,18 +110,17 @@ def choose_optimal_MCS_N_config(sizes, N_configs_vs_size, MCS_avg_vs_size, T_vs_
         assigned = False
         k = -1
         while not assigned:
-            match MCS_N_config_condition:
-                case 'max_MCS_with_a_minimum_of_N_configs':
-                    if N_configs_vs_size[size_index][k] > min_N_config:
-                        assigned = True
-                    else:
-                        k -= 1
-                case 'max_N_configs':
-                    if N_configs_vs_size[size_index][k] == max(N_configs_vs_size[size_index]) and \
-                            N_configs_vs_size[size_index][k] > 0:
-                        assigned = True
-                    else:
-                        k -= 1
+            if MCS_N_config_condition == 'max_MCS_with_a_minimum_of_N_configs':
+                if N_configs_vs_size[size_index][k] > min_N_config:
+                    assigned = True
+                else:
+                    k -= 1
+            elif MCS_N_config_condition == 'max_N_configs':
+                if N_configs_vs_size[size_index][k] == max(N_configs_vs_size[size_index]) and \
+                        N_configs_vs_size[size_index][k] > 0:
+                    assigned = True
+                else:
+                    k -= 1
 
         N_configs_vs_size_best[size_index] = N_configs_vs_size[size_index][k]
         MCS_avg_vs_size_best[size_index] = MCS_avg_vs_size[size_index][k]
