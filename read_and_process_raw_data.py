@@ -14,10 +14,10 @@ import Modules.figures as figs
 
 plt.rcParams['font.size'] = '16'
 plt.rcParams['figure.dpi'] = '200'
-plt.rcParams['backend'] = 'QtAgg'
+# plt.rcParams['backend'] = 'QtAgg'
 
 plt.rcParams.update({
-    "text.usetex": True,
+    "text.usetex": False,
     # "font.family": "sans-serif",
    # "font.sans-serif": "Helvetica",
 })
@@ -114,10 +114,10 @@ color_vs_size = ['turquoise',  'tab:olive', 'tab:green', 'tab:red', 'tab:purple'
 marker_vs_adjacency = ['^', '>', 'v', '<', '1', '2', '3', '.', '4', 'P', 'd', '*']
 
 # %% Choose an adjacency
-adj_index = 8
+adj_index = 9
 only_max_MCS = True  # Must be 'False' for thermalization tests, 'True' to read faster for the rest
 n_bootstrap = 36*10
-data_type = 'all'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
+data_type = 'binned'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
 MCS_N_config_condition = 'max_MCS_with_a_minimum_of_N_configs'
 min_N_config = 1000
 
@@ -218,7 +218,7 @@ for size_index, (T, g, err) in enumerate(zip(T_vs_size_best, g_vs_size_best, err
 ax1.set_ylabel('$g$')
 ax1.set_xlabel('$T$')
 ax1.set_xlim([0, Tf])
-# fig.tight_layout()
+fig.tight_layout()
 fig.show()
 
 # %% Plot dgdT
