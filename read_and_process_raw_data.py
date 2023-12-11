@@ -12,15 +12,14 @@ import Modules.statistical_mechanics as sm
 import Modules.pade_fits as pf
 import Modules.figures as figs
 
-
 plt.rcParams['font.size'] = '16'
 plt.rcParams['figure.dpi'] = '200'
 plt.rcParams['backend'] = 'QtAgg'
 
 plt.rcParams.update({
     "text.usetex": True,
-    "font.family": "sans-serif",
-   "font.sans-serif": "Helvetica",
+    # "font.family": "sans-serif",
+   # "font.sans-serif": "Helvetica",
 })
 
 importlib.reload(rfc)
@@ -66,6 +65,7 @@ max_MCSs_vs_adj_binned = np.array([[3, 3, 4, 6, 0, 6, 0],
                                    [5, 6, 7, 8, 0, 8, 0],
                                    [5, 6, 7, 8, 0, 8, 0],
                                    [5, 6, 7, 8, 0, 8, 0]])
+
 max_MCSs_vs_adj_fast =   np.array([[0, 0, 6, 7, 0, 9, 0],
                                    [0, 0, 6, 7, 0, 9, 0],
                                    [4, 5, 6, 7, 0, 9, 0],
@@ -114,10 +114,10 @@ color_vs_size = ['turquoise',  'tab:olive', 'tab:green', 'tab:red', 'tab:purple'
 marker_vs_adjacency = ['^', '>', 'v', '<', '1', '2', '3', '.', '4', 'P', 'd', '*']
 
 # %% Choose an adjacency
-adj_index = 10
+adj_index = 8
 only_max_MCS = True  # Must be 'False' for thermalization tests, 'True' to read faster for the rest
 n_bootstrap = 36*10
-data_type = 'fast'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
+data_type = 'all'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
 MCS_N_config_condition = 'max_MCS_with_a_minimum_of_N_configs'
 min_N_config = 1000
 
@@ -218,10 +218,11 @@ for size_index, (T, g, err) in enumerate(zip(T_vs_size_best, g_vs_size_best, err
 ax1.set_ylabel('$g$')
 ax1.set_xlabel('$T$')
 ax1.set_xlim([0, Tf])
-fig.tight_layout()
+# fig.tight_layout()
 fig.show()
 
 # %% Plot dgdT
+
 fig, ax = plt.subplots()
 for size_index, (T, dg_dT, error_dg_dT) in enumerate(zip(T_vs_size_best, dg_dT_vs_size_best, error_dg_dT_vs_size_best)):
     ax.errorbar(T, -dg_dT, yerr=error_dg_dT, label=f'{sizes[size_index]}', color=color_vs_size[size_index],

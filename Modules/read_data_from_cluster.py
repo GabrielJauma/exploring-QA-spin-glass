@@ -8,29 +8,58 @@ import glob
 def read_data_specific_size_and_MCS(adjacency, distribution, size, add, T0, Tf, MCS_avg, MCS_avg_0, max_MCS,
                                     data_type, max_configs=-1, n_q_dist=50):
 
-    match data_type:
-        case 'binned':
-            if add == 0:
-                fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},MCS_avg={MCS_avg_0},max_MCS={max_MCS},binned'
+    if data_type == 'binned':
+        if add == 0:
+            fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},MCS_avg={MCS_avg_0},max_MCS={max_MCS},binned'
+        else:
+            fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},MCS_avg={MCS_avg_0},max_MCS={max_MCS},add={add},binned'
+        try:
+            T = np.loadtxt(f'{fdir}/T.dat')
+        except:
+            # print(f'No data for {adjacency},n={size},max_MCS={max_MCS},add={add},binned.\n')
+            return size, MCS_avg, [], [], [], [], [], [], [], [], [], [], []
+        copies = len(T)
+
+        # while True:
+        file_type = f'{fdir}/MCS_avg={MCS_avg},seed=*.csv'
+        files = glob.glob(file_type)
+
+        n_bins = np.log2(MCS_avg).astype('int')
+        lines_per_config = 2 + n_bins * 2 + 3 + n_q_dist + 2
+
+        for file in files:
+            data = np.array(pd.read_csv(file))
+            if file == files[0]:
+                n_lines = data.shape[0]
+                configs = (n_lines + 1) // lines_per_config
+                label_indices = np.arange(0, n_lines, lines_per_config)
+                µ_q2_indices = np.arange(1, n_lines, lines_per_config)
+                µ_q4_indices = np.arange(2, n_lines, lines_per_config)
+                σ2_q2_indices = np.array(
+                    [np.arange(k, k + n_bins) for k in range(3, n_lines, lines_per_config)]).flatten()
+                σ2_q4_indices = np.array(
+                    [np.arange(k, k + n_bins) for k in range(3 + n_bins, n_lines, lines_per_config)]).flatten()
+                µ_ql_indices = np.arange(3 + 2 * n_bins, n_lines, lines_per_config)
+                µ_U_indices = np.arange(4 + 2 * n_bins, n_lines, lines_per_config)
+                µ_U2_indices = np.arange(5 + 2 * n_bins, n_lines, lines_per_config)
+                q_dist_indices = np.array([np.arange(k, k + n_q_dist) for k in
+                                           range(6 + 2 * n_bins, n_lines, lines_per_config)]).flatten()
+                n_lines_0 = n_lines
+
+                labels = data[label_indices, 0]
+                µ_q2_t = data[µ_q2_indices, :]
+                µ_q4_t = data[µ_q4_indices, :]
+                σ2_q2_bin_t = data[σ2_q2_indices, :].reshape([configs, n_bins, copies])
+                σ2_q4_bin_t = data[σ2_q4_indices, :].reshape([configs, n_bins, copies])
+                µ_ql_t = data[µ_ql_indices, :]
+                µ_U_t = data[µ_U_indices, :]
+                µ_U2_t = data[µ_U2_indices, :]
+                q_dist_t = data[q_dist_indices, :].reshape([configs, n_q_dist, copies]).astype('int')
+
             else:
-                fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},MCS_avg={MCS_avg_0},max_MCS={max_MCS},add={add},binned'
-            try:
-                T = np.loadtxt(f'{fdir}/T.dat')
-            except:
-                # print(f'No data for {adjacency},n={size},max_MCS={max_MCS},add={add},binned.\n')
-                return size, MCS_avg, [], [], [], [], [], [], [], [], [], [], []
-            copies = len(T)
-
-            # while True:
-            file_type = f'{fdir}/MCS_avg={MCS_avg},seed=*.csv'
-            files = glob.glob(file_type)
-
-            n_bins = np.log2(MCS_avg).astype('int')
-            lines_per_config = 2 + n_bins * 2 + 3 + n_q_dist + 2
-
-            for file in files:
-                data = np.array(pd.read_csv(file))
-                if file == files[0]:
+                # Append the data from µ_q2 to µ_q2_c
+                n_lines = data.shape[0]
+                if n_lines != n_lines_0:
                     n_lines = data.shape[0]
                     configs = (n_lines + 1) // lines_per_config
                     label_indices = np.arange(0, n_lines, lines_per_config)
@@ -47,154 +76,124 @@ def read_data_specific_size_and_MCS(adjacency, distribution, size, add, T0, Tf, 
                                                range(6 + 2 * n_bins, n_lines, lines_per_config)]).flatten()
                     n_lines_0 = n_lines
 
-                    labels = data[label_indices, 0]
-                    µ_q2_t = data[µ_q2_indices, :]
-                    µ_q4_t = data[µ_q4_indices, :]
-                    σ2_q2_bin_t = data[σ2_q2_indices, :].reshape([configs, n_bins, copies])
-                    σ2_q4_bin_t = data[σ2_q4_indices, :].reshape([configs, n_bins, copies])
-                    µ_ql_t = data[µ_ql_indices, :]
-                    µ_U_t = data[µ_U_indices, :]
-                    µ_U2_t = data[µ_U2_indices, :]
-                    q_dist_t = data[q_dist_indices, :].reshape([configs, n_q_dist, copies]).astype('int')
+                labels = np.append(labels, data[label_indices, 0], axis=0)
+                µ_q2_t = np.vstack([µ_q2_t, data[µ_q2_indices, :]])
+                µ_q4_t = np.vstack([µ_q4_t, data[µ_q4_indices, :]])
+                σ2_q2_bin_t = np.vstack([σ2_q2_bin_t, data[σ2_q2_indices, :].reshape([configs, n_bins, copies])])
+                σ2_q4_bin_t = np.vstack([σ2_q4_bin_t, data[σ2_q4_indices, :].reshape([configs, n_bins, copies])])
+                µ_ql_t = np.vstack([µ_ql_t, data[µ_ql_indices, :]])
+                µ_U_t = np.vstack([µ_U_t, data[µ_U_indices, :]])
+                µ_U2_t = np.vstack([µ_U2_t, data[µ_U2_indices, :]])
+                q_dist_t = np.vstack(
+                    [q_dist_t, data[q_dist_indices, :].reshape([configs, n_q_dist, copies]).astype('int')])
 
-                else:
-                    # Append the data from µ_q2 to µ_q2_c
-                    n_lines = data.shape[0]
-                    if n_lines != n_lines_0:
-                        n_lines = data.shape[0]
-                        configs = (n_lines + 1) // lines_per_config
-                        label_indices = np.arange(0, n_lines, lines_per_config)
-                        µ_q2_indices = np.arange(1, n_lines, lines_per_config)
-                        µ_q4_indices = np.arange(2, n_lines, lines_per_config)
-                        σ2_q2_indices = np.array(
-                            [np.arange(k, k + n_bins) for k in range(3, n_lines, lines_per_config)]).flatten()
-                        σ2_q4_indices = np.array(
-                            [np.arange(k, k + n_bins) for k in range(3 + n_bins, n_lines, lines_per_config)]).flatten()
-                        µ_ql_indices = np.arange(3 + 2 * n_bins, n_lines, lines_per_config)
-                        µ_U_indices = np.arange(4 + 2 * n_bins, n_lines, lines_per_config)
-                        µ_U2_indices = np.arange(5 + 2 * n_bins, n_lines, lines_per_config)
-                        q_dist_indices = np.array([np.arange(k, k + n_q_dist) for k in
-                                                   range(6 + 2 * n_bins, n_lines, lines_per_config)]).flatten()
-                        n_lines_0 = n_lines
+            current_config = len(labels)
+            if current_config > max_configs != -1:
+                break
+        N_configs = µ_q2_t.shape[0]
+        print(size, MCS_avg, N_configs)
 
-                    labels = np.append(labels, data[label_indices, 0], axis=0)
-                    µ_q2_t = np.vstack([µ_q2_t, data[µ_q2_indices, :]])
-                    µ_q4_t = np.vstack([µ_q4_t, data[µ_q4_indices, :]])
-                    σ2_q2_bin_t = np.vstack([σ2_q2_bin_t, data[σ2_q2_indices, :].reshape([configs, n_bins, copies])])
-                    σ2_q4_bin_t = np.vstack([σ2_q4_bin_t, data[σ2_q4_indices, :].reshape([configs, n_bins, copies])])
-                    µ_ql_t = np.vstack([µ_ql_t, data[µ_ql_indices, :]])
-                    µ_U_t = np.vstack([µ_U_t, data[µ_U_indices, :]])
-                    µ_U2_t = np.vstack([µ_U2_t, data[µ_U2_indices, :]])
-                    q_dist_t = np.vstack(
-                        [q_dist_t, data[q_dist_indices, :].reshape([configs, n_q_dist, copies]).astype('int')])
+        return size, MCS_avg, N_configs, labels, T, µ_q2_t, µ_q4_t, µ_ql_t, µ_U_t, µ_U2_t, \
+            σ2_q2_bin_t, σ2_q4_bin_t, q_dist_t[:, :, ::-1]
 
-                current_config = len(labels)
-                if current_config > max_configs != -1:
-                    break
-            N_configs = µ_q2_t.shape[0]
-            print(size, MCS_avg, N_configs)
+    elif data_type== 'fast':
+        if add == 0:
+            fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},max_MCS={max_MCS},fast'
+        else:
+            fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},max_MCS={max_MCS},add={add},fast'
+        try:
+            T = np.loadtxt(f'{fdir}/T.dat')
+        except:
+            # print(f'No data for {adjacency},n={size},max_MCS={max_MCS},add={add},fast.\n')
+            return size, MCS_avg, [], [], [], [], []
 
-            return size, MCS_avg, N_configs, labels, T, µ_q2_t, µ_q4_t, µ_ql_t, µ_U_t, µ_U2_t, \
-                σ2_q2_bin_t, σ2_q4_bin_t, q_dist_t[:, :, ::-1]
+        # while True:
+        file_type = f'{fdir}/MCS_avg={MCS_avg},seed=*.csv'
+        files = glob.glob(file_type)
 
-        case 'fast':
-            if add == 0:
-                fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},max_MCS={max_MCS},fast'
+        lines_per_config = 4
+
+        for file in files:
+            data = np.array(pd.read_csv(file))
+            if file == files[0]:
+                n_lines = data.shape[0]
+                label_indices = np.arange(0, n_lines, lines_per_config)
+                µ_q2_indices = np.arange(1, n_lines, lines_per_config)
+                µ_q4_indices = np.arange(2, n_lines, lines_per_config)
+                n_lines_0 = n_lines
+
+                labels = data[label_indices, 0]
+                µ_q2_t = data[µ_q2_indices, :]
+                µ_q4_t = data[µ_q4_indices, :]
+
             else:
-                fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},max_MCS={max_MCS},add={add},fast'
-            try:
-                T = np.loadtxt(f'{fdir}/T.dat')
-            except:
-                # print(f'No data for {adjacency},n={size},max_MCS={max_MCS},add={add},fast.\n')
-                return size, MCS_avg, [], [], [], [], []
-
-            # while True:
-            file_type = f'{fdir}/MCS_avg={MCS_avg},seed=*.csv'
-            files = glob.glob(file_type)
-
-            lines_per_config = 4
-
-            for file in files:
-                data = np.array(pd.read_csv(file))
-                if file == files[0]:
+                # Append the data from µ_q2 to µ_q2_c
+                n_lines = data.shape[0]
+                if n_lines != n_lines_0:
                     n_lines = data.shape[0]
                     label_indices = np.arange(0, n_lines, lines_per_config)
                     µ_q2_indices = np.arange(1, n_lines, lines_per_config)
                     µ_q4_indices = np.arange(2, n_lines, lines_per_config)
                     n_lines_0 = n_lines
 
-                    labels = data[label_indices, 0]
-                    µ_q2_t = data[µ_q2_indices, :]
-                    µ_q4_t = data[µ_q4_indices, :]
+                labels = np.append(labels, data[label_indices, 0], axis=0)
+                µ_q2_t = np.vstack([µ_q2_t, data[µ_q2_indices, :]])
+                µ_q4_t = np.vstack([µ_q4_t, data[µ_q4_indices, :]])
 
-                else:
-                    # Append the data from µ_q2 to µ_q2_c
-                    n_lines = data.shape[0]
-                    if n_lines != n_lines_0:
-                        n_lines = data.shape[0]
-                        label_indices = np.arange(0, n_lines, lines_per_config)
-                        µ_q2_indices = np.arange(1, n_lines, lines_per_config)
-                        µ_q4_indices = np.arange(2, n_lines, lines_per_config)
-                        n_lines_0 = n_lines
+            current_config = len(labels)
+            if current_config > max_configs != -1:
+                break
+        N_configs = µ_q2_t.shape[0]
+        print(size, MCS_avg, N_configs)
 
-                    labels = np.append(labels, data[label_indices, 0], axis=0)
-                    µ_q2_t = np.vstack([µ_q2_t, data[µ_q2_indices, :]])
-                    µ_q4_t = np.vstack([µ_q4_t, data[µ_q4_indices, :]])
+        return size, MCS_avg, N_configs, labels, T, [µ_q2_t], [µ_q4_t]
 
-                current_config = len(labels)
-                if current_config > max_configs != -1:
-                    break
-            N_configs = µ_q2_t.shape[0]
-            print(size, MCS_avg, N_configs)
+    elif data_type=='old':
+        if add == 0:
+            fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},MCS_avg={MCS_avg_0},max_MCS={max_MCS}'
+        else:
+            fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},MCS_avg={MCS_avg_0},max_MCS={max_MCS},add={add}'
+        try:
+            T = np.loadtxt(f'{fdir}/T.dat')
+        except:
+            # print(f'No data for {adjacency},n={size},max_MCS={max_MCS},add={add},old.\n')
+            return size, MCS_avg, [], [], [], [], [], [], [], []
+        copies = len(T)
 
-            return size, MCS_avg, N_configs, labels, T, [µ_q2_t], [µ_q4_t]
+        file_type = f'{fdir}/MCS_avg={MCS_avg},seed=*.dat'
+        files = glob.glob(file_type)
 
-        case 'old':
-            if add == 0:
-                fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},MCS_avg={MCS_avg_0},max_MCS={max_MCS}'
-            else:
-                fdir = f'Data/{adjacency}_{distribution},n={size},T={T0}_{Tf},MCS_avg={MCS_avg_0},max_MCS={max_MCS},add={add}'
-            try:
-                T = np.loadtxt(f'{fdir}/T.dat')
-            except:
-                # print(f'No data for {adjacency},n={size},max_MCS={max_MCS},add={add},old.\n')
-                return size, MCS_avg, [], [], [], [], [], [], [], []
-            copies = len(T)
+        labels = np.array([], dtype='int')
+        µ_q2_t, µ_q4_t, σ2_q2_t, σ2_q4_t, µ_ql_t, µ_U_t, µ_U2_t = [np.empty([0, len(T)]) for _ in range(7)]
 
-            file_type = f'{fdir}/MCS_avg={MCS_avg},seed=*.dat'
-            files = glob.glob(file_type)
+        for file in files:
+            f = open(file)
+            data = f.read().splitlines()
+            f.close()
 
-            labels = np.array([], dtype='int')
-            µ_q2_t, µ_q4_t, σ2_q2_t, σ2_q4_t, µ_ql_t, µ_U_t, µ_U2_t = [np.empty([0, len(T)]) for _ in range(7)]
+            file_labels = np.array(data[0::8])
+            µ_q2, µ_q4, σ2_q2, σ2_q4, µ_ql, µ_U, µ_U2 = [np.zeros([len(file_labels), copies]) for _ in range(7)]
+            for r in range(len(file_labels)):
+                µ_q2[r, :], µ_q4[r, :], σ2_q2[r, :], σ2_q4[r, :], µ_ql[r, :], µ_U[r, :], µ_U2[r, :] = \
+                    [np.array(data[k + 1::8][r].split(), dtype='float') for k in range(7)]
 
-            for file in files:
-                f = open(file)
-                data = f.read().splitlines()
-                f.close()
+            # Append the data from µ_q2 to µ_q2_c
+            labels = np.append(labels, file_labels, axis=0)
+            µ_q2_t = np.append(µ_q2_t, µ_q2, axis=0)  # Thermal averages of q2 for different configurations
+            µ_q4_t = np.append(µ_q4_t, µ_q4, axis=0)  # Thermal averages of q4 for different configurations
+            σ2_q2_t = np.append(σ2_q2_t, σ2_q2, axis=0)  # Thermal variances of q2 for different configurations
+            σ2_q4_t = np.append(σ2_q4_t, σ2_q4, axis=0)  # Thermal variances of q4 for different configurations
+            µ_ql_t = np.append(µ_ql_t, µ_ql, axis=0)  # Thermal averages of q4 for different configurations
+            µ_U_t = np.append(µ_U_t, µ_U, axis=0)  # Thermal averages of q4 for different configurations
+            µ_U2_t = np.append(µ_U2_t, µ_U2, axis=0)  # Thermal averages of q4 for different configurations
 
-                file_labels = np.array(data[0::8])
-                µ_q2, µ_q4, σ2_q2, σ2_q4, µ_ql, µ_U, µ_U2 = [np.zeros([len(file_labels), copies]) for _ in range(7)]
-                for r in range(len(file_labels)):
-                    µ_q2[r, :], µ_q4[r, :], σ2_q2[r, :], σ2_q4[r, :], µ_ql[r, :], µ_U[r, :], µ_U2[r, :] = \
-                        [np.array(data[k + 1::8][r].split(), dtype='float') for k in range(7)]
+            current_config = µ_q2_t.shape[0]
+            if current_config > max_configs != -1:
+                break
+        N_configs = µ_q2_t.shape[0]
+        print(size, MCS_avg, N_configs)
 
-                # Append the data from µ_q2 to µ_q2_c
-                labels = np.append(labels, file_labels, axis=0)
-                µ_q2_t = np.append(µ_q2_t, µ_q2, axis=0)  # Thermal averages of q2 for different configurations
-                µ_q4_t = np.append(µ_q4_t, µ_q4, axis=0)  # Thermal averages of q4 for different configurations
-                σ2_q2_t = np.append(σ2_q2_t, σ2_q2, axis=0)  # Thermal variances of q2 for different configurations
-                σ2_q4_t = np.append(σ2_q4_t, σ2_q4, axis=0)  # Thermal variances of q4 for different configurations
-                µ_ql_t = np.append(µ_ql_t, µ_ql, axis=0)  # Thermal averages of q4 for different configurations
-                µ_U_t = np.append(µ_U_t, µ_U, axis=0)  # Thermal averages of q4 for different configurations
-                µ_U2_t = np.append(µ_U2_t, µ_U2, axis=0)  # Thermal averages of q4 for different configurations
-
-                current_config = µ_q2_t.shape[0]
-                if current_config > max_configs != -1:
-                    break
-            N_configs = µ_q2_t.shape[0]
-            print(size, MCS_avg, N_configs)
-
-            return size, MCS_avg, N_configs, labels, T, µ_q2_t, µ_q4_t, µ_ql_t, µ_U_t, µ_U2_t
+        return size, MCS_avg, N_configs, labels, T, µ_q2_t, µ_q4_t, µ_ql_t, µ_U_t, µ_U2_t
 
 
 # %% Read data of all the sizes and MCS values
@@ -242,16 +241,15 @@ def read_data(adjacency, distribution, sizes, add, T0, Tf, MCS_avg_0, max_MCS_vs
                 cases_fast.append([size, MCS_avg, max_MCS])
 
 
-    match data_type:
-        case 'binned':
-            max_MCS_vs_size = max_MCS_vs_size_binned
-        case 'old':
-            max_MCS_vs_size = max_MCS_vs_size_old
-        case 'fast':
-            max_MCS_vs_size = max_MCS_vs_size_fast
-        case 'all':
-            max_MCS_vs_size = np.array( [max(MCS_old, MCS_binned, MCS_fast) for MCS_old, MCS_binned, MCS_fast
-                                         in zip(max_MCS_vs_size_binned, max_MCS_vs_size_old, max_MCS_vs_size_fast)])
+    if data_type == 'binned':
+        max_MCS_vs_size = max_MCS_vs_size_binned
+    elif data_type == 'old':
+        max_MCS_vs_size = max_MCS_vs_size_old
+    elif data_type == 'fast':
+        max_MCS_vs_size = max_MCS_vs_size_fast
+    elif data_type == 'all':
+        max_MCS_vs_size = np.array( [max(MCS_old, MCS_binned, MCS_fast) for MCS_old, MCS_binned, MCS_fast
+                                     in zip(max_MCS_vs_size_binned, max_MCS_vs_size_old, max_MCS_vs_size_fast)])
 
     n_MCS_vs_size = np.log2(max_MCS_vs_size // MCS_avg_0).astype('int') + 1
     MCS_avg_vs_size = [MCS_avg_0 * 2 ** (np.arange(n_MCS)) for n_MCS in n_MCS_vs_size]
