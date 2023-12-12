@@ -14,12 +14,12 @@ import Modules.figures as figs
 
 plt.rcParams['font.size'] = '16'
 plt.rcParams['figure.dpi'] = '200'
-# plt.rcParams['backend'] = 'QtAgg'
+plt.rcParams['backend'] = 'QtAgg'
 
 plt.rcParams.update({
     "text.usetex": False,
-    # "font.family": "sans-serif",
-   # "font.sans-serif": "Helvetica",
+    "font.family": "sans-serif",
+   "font.sans-serif": "Helvetica",
 })
 
 importlib.reload(rfc)
@@ -114,9 +114,9 @@ color_vs_size = ['turquoise',  'tab:olive', 'tab:green', 'tab:red', 'tab:purple'
 marker_vs_adjacency = ['^', '>', 'v', '<', '1', '2', '3', '.', '4', 'P', 'd', '*']
 
 # %% Choose an adjacency
-adj_index = 10
+adj_index = 9
 only_max_MCS = True  # Must be 'False' for thermalization tests, 'True' to read faster for the rest
-n_bootstrap = 36*10
+n_bootstrap = 36*20
 data_type = 'all'  # Must be 'binned' for thermalization tests, 'True' to read faster for the rest
 MCS_N_config_condition = 'max_MCS_with_a_minimum_of_N_configs'
 min_N_config = 1000
@@ -300,16 +300,19 @@ else:
 fig, ax = plt.subplots()
 ax.hist(Tc_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
 ax.bar(Tc, [100]*len(sizes), 0.0005, color='k')
+ax.set_title('T_C')
 fig.show()
 
 fig, ax = plt.subplots()
 ax.hist(inv_peak_height_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
 ax.bar(inv_peak_height, [100]*len(sizes), 0.0005, color='k')
+ax.set_title('1/peak_height')
 fig.show()
 
 fig, ax = plt.subplots()
 ax.hist(peak_width_bootstrap, 500, histtype='stepfilled', alpha=0.7, density=True)
 ax.bar(peak_width, [100]*len(sizes), 0.0005, color='k')
+ax.set_title('peak_width')
 fig.show()
 
 # %% Store processed data
@@ -320,8 +323,8 @@ np.savez(fname, Tc=Tc, Tc_err=Tc_err, inv_peak_height=inv_peak_height, inv_peak_
          peak_width_inf_err=peak_width_inf_err, allow_pickle=True)
 
 #%% PROCESS DATA FOR FIGURES 4 AND 6 - Tc vs adjacency
-graphs = 'mean_field'  # Fig. 4
-# graphs = 'Dwave' # Fig. 6
+# graphs = 'mean_field'  # Fig. 4
+graphs = 'Dwave' # Fig. 6
 write_file = True
 # %% Tc vs adjacency
 if graphs == 'Dwave':
